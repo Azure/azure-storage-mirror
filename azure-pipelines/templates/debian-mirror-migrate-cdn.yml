@@ -25,9 +25,9 @@ steps:
     echo "Change the priority of $cdn_replicaorigin_name in $endpoint_name to $priority"
     az cdn origin update -g "$resource_group" --endpoint-name "$endpoint_name" -n "$cdn_replicaorigin_name"  --profile-name "$cdn_profile" --priority $priority
     if [ "$purgeContent" == "y" ]; then
-      echo "Purge the CDN content path /debian/debian/dist/*, it will take several miniutes"
+      echo "Purge the CDN content path /debian/debian/dists/*, it will take several miniutes"
       az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian/dist/*'
-      echo "Purge the CDN content path /debian/debian-security/dist/*, it will take several miniutes"
+      echo "Purge the CDN content path /debian/debian-security/dists/*, it will take several miniutes"
       az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian-security/dist/*'
     fi
   env:
