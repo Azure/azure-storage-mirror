@@ -28,10 +28,6 @@ steps:
       # Purge twice as a workaround for CDN bug.
       echo "Purge the CDN content path /debian/debian/dists/*, it will take several miniutes"
       az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian/dists/*'
-      echo "Purge the CDN content path /debian/debian/dists/*, it will take several miniutes"
-      az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian/dists/*'
-      echo "Purge the CDN content path /debian/debian-security/dists/*, it will take several miniutes"
-      az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian-security/dists/*'
       echo "Purge the CDN content path /debian/debian-security/dists/*, it will take several miniutes"
       az cdn endpoint purge -g "$resource_group" -n "$endpoint_name" --profile-name sonicstoragepublic --content-paths '/debian/debian-security/dists/*'
     fi
