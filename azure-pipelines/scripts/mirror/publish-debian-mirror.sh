@@ -147,7 +147,7 @@ update_repos()
             fi
             WITH_SOURCES="-with-sources"
             [ "$dist" == "jessie" ] && WITH_SOURCES=""
-            aptly -config $APTLY_CONFIG -ignore-signatures -architectures="$archs" mirror create $WITH_SOURCES $mirror $url $dist $component
+            aptly -config $APTLY_CONFIG -ignore-signatures -architectures="$archs" mirror create -force-components $WITH_SOURCES $mirror $url $dist $component
             SAVE_WORKSPACE=y
         fi
 

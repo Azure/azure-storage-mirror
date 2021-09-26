@@ -15,7 +15,7 @@ schedules:
     - main
   always: true
 
-pool: sonic-mirror-build-2
+pool: sonic-mirror-build-3
 variables:
 - group: SONiC-Azure-Key-Vault
 - group: Debian-Mirror-Common

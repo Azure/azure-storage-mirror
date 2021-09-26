@@ -54,6 +54,11 @@ jobs:
         MIRROR_FILESYSTEM: debian
         MIRROR_URL: 'http://deb.debian.org/debian'
         MIRROR_DISTRIBUTIONS: 'buster,buster-updates,buster-backports'
+    - name: bullseye
+      variables:
+        MIRROR_FILESYSTEM: debian
+        MIRROR_URL: 'http://deb.debian.org/debian'
+        MIRROR_DISTRIBUTIONS: 'bullseye,bullseye-updates,bullseye-backports'
     - name: jessie-security
       variables:
         MIRROR_FILESYSTEM: debian-security
@@ -70,3 +75,8 @@ jobs:
         MIRROR_FILESYSTEM: debian-security
         MIRROR_URL: 'http://security.debian.org/debian-security'
         MIRROR_DISTRIBUTIONS: 'buster/updates'
+    - name: bullseye-security
+      variables:
+        MIRROR_FILESYSTEM: debian-security
+        MIRROR_URL: 'http://security.debian.org/debian-security'
+        MIRROR_DISTRIBUTIONS: 'bullseye-security'
