@@ -18,11 +18,11 @@ steps:
     [ -z "$NFS_MOUNT_POINT" ] && NFS_MOUNT_POINT=/nfs_data
 
     echo "Mount azure storage NFS 3.0"
+    [ ! -d $NFS_MOUNT_POINT ] && sudo mkdir -p $NFS_MOUNT_POINT
     if mountpoint $NFS_MOUNT_POINT; then
       sudo umount $NFS_MOUNT_POINT
     fi
 
-    sudo mkdir -p $NFS_MOUNT_POINT
     sudo mount sec=sys,vers=3,nolock,proto=tcp $(StorageAccountNfs).blob.core.windows.net:/$(StorageAccountNfs)/data $NFS_MOUNT_POINT
     sudo chmod 777 $NFS_MOUNT_POINT
 
