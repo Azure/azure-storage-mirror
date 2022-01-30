@@ -10,6 +10,7 @@ steps:
 - bash: |
     set -e
     az login -u $(ApplicationId) --service-principal --tenant $(AzureTenant) -p "$ApplicationKey"
+    az account set -s $(SubscriptionId)
     resource_group=$(CDNResourceGroup)
     endpoint_name=$(CDNEndpointName)
     cdn_profile=$(CDNProfile)
