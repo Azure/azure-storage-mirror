@@ -1,0 +1,31 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+trigger: none
+
+pr: none
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: Daily Build
+  branches:
+    include:
+    - main
+  always: true
+
+pool: sonic-mirror-westus2-1
+variables:
+- group: sonic-kv-1
+- group: sonic-azp-common-1
+- group: sonic-azp-westus2-1
+- name: StorageAccount
+  value: 'sonicstoragepublic20'
+- name: StorageAccountReplica
+  value: 'sonicstoragepublic21'
+- name: StorageAccountNfs
+  value: 'sonicstoragenfs0'
+
+stages:
+- template: ../templates/debian-mirror-stages.yml

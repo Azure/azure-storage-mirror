@@ -15,26 +15,24 @@ steps:
     # Mount the publish contianer for web mirrors
     echo 'Mount storage containers to publish web packages'
     MOUNT_POINT_PRIMARY=/blobfuse-${StorageAccount}-web
-    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_PRIMARY" "$StorageAccount" '$web' "$StorageAccountSasToken" "/data/blobfuse-${StorageAccount}-web"
+    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_PRIMARY" "$StorageAccount" '$web' "/data/blobfuse-${StorageAccount}-web"
     mkdir -p $MOUNT_POINT_PRIMARY/public
     ln -s $MOUNT_POINT_PRIMARY/public $WORKSPACE/public
 
     # Mount the data container for internal use, like metrics
     MOUNT_POINT_DATA=/blobfuse-${StorageAccount}-data
-    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_DATA" "$StorageAccount" 'data' "$StorageAccountSasToken" "/data/blobfuse-${StorageAccount}-data"
+    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_DATA" "$StorageAccount" 'data' "/data/blobfuse-${StorageAccount}-data"
     ln -s $MOUNT_POINT_DATA $WORKSPACE/_storage_data
     
     # Mount the publish contianer for replica web mirrors
     MOUNT_POINT_REPLICA=/blobfuse-${StorageAccountReplica}-web
-    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_REPLICA" "$StorageAccountReplica" '$web' "$StorageAccountReplicaSasToken" "/data/blobfuse-${StorageAccountReplica}-web"
+    azure-pipelines/scripts/mirror/mount-storage.sh "$MOUNT_POINT_REPLICA" "$StorageAccountReplica" '$web' "/data/blobfuse-${StorageAccountReplica}-web"
     mkdir -p $MOUNT_POINT_REPLICA/public
     ln -s $MOUNT_POINT_REPLICA/public $WORKSPACE/public-replica
 
     echo 'The mount storage container web is complete'
   env:
     StorageAccount: $(StorageAccount)
-    StorageAccountSasToken: $(StorageAccountSasToken)
     StorageAccountReplica: $(StorageAccountReplica)
-    StorageAccountReplicaSasToken: $(StorageAccountReplicaSasToken)
     
   displayName: 'Mount stroage container to publish mirror script'

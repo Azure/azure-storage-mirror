@@ -19,6 +19,11 @@ STORAGE_DB_DIR=$STORAGE_MIRROR_DIR/dbs
 STORAGE_DB_LATEST_VERSION=$STORAGE_DATA/aptly/$MIRROR_NAME/latest_version
 STORAGE_LATEST_VERSION=$STORAGE_DATA/aptly/latest_version
 STORAGE_BUILDS_DIR=$STORAGE_DATA/builds
+STORAGE_STATIC_WEBSITE_DIR=$STORAGE_DATA/static
+STORAGE_STATIC_WEBSITE_PUBLISH_FILE=$STORAGE_DATA/static/publish_path.list
+PUBLISH_FILESYSTEM_PATH=publish/$MIRROR_FILESYSTEM
+PUBLISH_MIRROR_PATH=$PUBLISH_FILESYSTEM_PATH/dists/$MIRROR_NAME
+HAS_PUBLISH_UPDATE=n
 
 PUBLISH_VERSIONS_DIR=publish/versions
 
@@ -307,9 +312,42 @@ publish_repos()
     echo $db_version > $published_version_file
     echo $db_version >> $PUBLISHED_VERSIONS
 
+    HAS_PUBLISH_UPDATE=y
     if [ ! -z "$PUBLISH_FLAG" ]; then
         touch "$PUBLISH_FLAG"
     fi
+}
+
+publish_static_website_index()
+{
+    if [ "$HAS_PUBLISH_UPDATE" != y ]; then
+        echo "Skip to publish static website for not publish updated"
+        return
+    fi
+    echo publish > publish_path_dists.list
+    echo $PUBLISH_FILESYSTEM_PATH >> publish_path_dists.list 
+    find $PUBLISH_FILESYSTEM_PATH/dists -type d >> publish_path_dists.list
+    echo "Publish static website for $PUBLISH_MIRROR_PATH by diff"
+    mkdir -p $STORAGE_STATIC_WEBSITE_DIR
+    touch $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
+    sed '' > azure_storage_index.html
+    grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s/^Filename: /$PUBLISH_FILESYSTEM_PATH\//" \
+     | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
+    cat publish_path_dists.list publish_path_pool.list | sort | uniq > publish_path_current.list
+    comm -13 $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path_current.list > publish_path.diff
+    for read -r static_path; do
+        echo "Make static index for $line"
+        if [ -d $static_path ]; then
+            cp azure_storage_index.html $static_path/
+        else
+            echo "The path $static_path does not exist" 1>&2
+        fi
+    done < publish_path.diff
+
+    echo "Update $STORAGE_STATIC_WEBSITE_PUBLISH_FILE"
+    cat $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path.diff | sort | uniq > publish_path.list
+    cp publish_path.list $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
+    "Publish static website for $PUBLISH_MIRROR_PATH complete"
 }
 
 
@@ -328,6 +366,7 @@ main()
     if [ ! -z "$version" ]; then
         echo $version > $PUBLISH_VERSIONS_DIR/version-${MIRROR_NAME}
     fi
+    publish_static_website_index
     save_workspace
 }
 

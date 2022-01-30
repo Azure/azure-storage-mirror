@@ -7,8 +7,6 @@ steps:
   displayName: "Init Step"
 - template: ../templates/debian-mirror-init-agent.yml
 - template: ../templates/debian-mirror-init-storage.yml
-  parameters:
-    nfsMountPoint: '/$(NFSName)'
 - bash: |
     set -e
     az login -u $(ApplicationId) --service-principal --tenant $(AzureTenant) -p "$ApplicationKey"

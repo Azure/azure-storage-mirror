@@ -13,7 +13,6 @@ jobs:
     - template: debian-mirror-init-storage.yml
       parameters:
         mirrorName: $(GROUP_NAME)
-        nfsMountPoint: '/$(NFSName)'
     - script: |
         echo "StorageAccountReplica=$(StorageAccountReplica)"
         echo "StorageAccount=$(StorageAccount)"

@@ -3,9 +3,8 @@
 MOUNTPOINT=$1
 STORAGE_ACCOUNT=$2
 CONTAINER_NAME=$3
-STORAGE_ACCOUNT_SASTOKEN=$4
-TEMPPATH=$5
-REMOUNT=$6
+TEMPPATH=$4
+REMOUNT=$5
 
 if [ -z "$STORAGE_ACCOUNT" ]; then
     echo "The storage account is empty" 2>&1
@@ -17,6 +16,10 @@ if [ "$REMOUNT" == "y" ] && mountpoint $MOUNTPOINT; then
    sudo umount $MOUNTPOINT
 fi
 
+if ! grep -q '^user_allow_other' /etc/fuse.conf; then
+   echo user_allow_other | sudo tee -a /etc/fuse.conf > /dev/null
+fi
+
 if ! mountpoint $MOUNTPOINT; then
     if [ ! -e $MOUNTPOINT ]; then
      sudo mkdir -p "$MOUNTPOINT"
@@ -24,7 +27,7 @@ if ! mountpoint $MOUNTPOINT; then
     fi
     
     export AZURE_STORAGE_ACCOUNT="$STORAGE_ACCOUNT"
-    export AZURE_STORAGE_SAS_TOKEN="$STORAGE_ACCOUNT_SASTOKEN"
+    export AZURE_STORAGE_AUTH_TYPE=MSI
     sudo -E blobfuse "$MOUNTPOINT" --container-name="$CONTAINER_NAME" --tmp-path="$TEMPPATH" -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
 fi
 

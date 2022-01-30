@@ -5,81 +5,47 @@ parameters:
 - name: 'workspace'
   type: string
   default: 'work'
-- name: 'nfsMountPoint'
-  type: string
-  default: '/nfs_data'
 steps:
 - bash: |
-    WORKSPACE=${{ parameters.workspace }}
-    echo "pwd=$(pwd)"
-    echo "PublishToReplica=$(PublishToReplica)"
-    echo "StorageAccount=$(StorageAccount)"
-    echo "StorageAccountReplica=$(StorageAccountReplica)"
-    if [ -z "$WORKSPACE" ]; then
-      echo "The workspace is not set." 2>&1
-      exit 1
-    fi
-    [ -e "$WORKSPACE" ] && sudo rm -rf "$WORKSPACE"
-    mkdir -p "$WORKSPACE"
-  displayName: 'Clean up workspace'
-- bash: |
     set -e
     WORKSPACE=${{ parameters.workspace }}
     MIRROR_NAME=${{ parameters.mirrorName }}
-    NFS_VOLUMN=$(NFSVolumn)
-    NFS_MOUNT_POINT=${{ parameters.nfsMountPoint }}
+    NFS_MOUNT_POINT=/nfs-$(StorageAccountNfs)-data
+    NFS_MIRROR_POOL=$NFS_MOUNT_POINT/aptly/$MIRROR_NAME/pool
+    PUBLISH_STORAGE=$(StorageAccount)
+    [ "$(PublishToReplica)" == "y" ] && PUBLISH_STORAGE=$(StorageAccountReplica)
+    STORAGE_PUBLISH_PATH=/data/blobfus-${PUBLISH_STORAGE}-web
     [ -z "$NFS_MOUNT_POINT" ] && NFS_MOUNT_POINT=/nfs_data
-    azure-pipelines/scripts/mirror/mount-nfs.sh "$NFS_MOUNT_POINT" "$NFS_VOLUMN"
-    mkdir -p "$NFS_MOUNT_POINT/aptly"
-    ln -s "$NFS_MOUNT_POINT/aptly" "$WORKSPACE/_aptly"
-    if [ "$MIRROR_NAME" == "none" ]; then
-      echo "Skip to make mirror soft link"
-      exit 0
+
+    echo "Mount azure storage NFS 3.0"
+    if mountpoint $NFS_MOUNT_POINT; then
+      sudo umount $NFS_MOUNT_POINT
     fi
 
-    APTLY_POOL_PATH=$WORKSPACE/pool
-    NFS_MIRROR_PATH=$NFS_MOUNT_POINT/aptly/$MIRROR_NAME
-    echo "APTLY_POOL_PATH=$APTLY_POOL_PATH"
-    mkdir -p "$NFS_MIRROR_PATH/pool"
-    echo "ln -s $NFS_MIRROR_PATH/pool $APTLY_POOL_PATH"
-    ln -s $NFS_MIRROR_PATH/pool $APTLY_POOL_PATH
-    echo 'The mount nfs aptly pool is complete'
-  displayName: 'Mount the NFS'
-- bash: |
-    # Mount storage containers for the aptly db and/or pool of debian mirrors
-    set -e
-    WORKSPACE=${{ parameters.workspace }}
-    MIRROR_NAME=${{ parameters.mirrorName }}
-    echo 'Mount storage container aptly for debian mirrors'
-    BLOBFUSE_APTLY_DATA=/blobfuse-${StorageAccount}-data
-    azure-pipelines/scripts/mirror/mount-storage.sh "$BLOBFUSE_APTLY_DATA" "$StorageAccount" "data" "$StorageAccountSasToken" "/data/blobfuse-${StorageAccount}-data" y
-    STORAGE_DATA_PATH=$WORKSPACE/_storage_data
-    APTLY_POOL_PATH=$WORKSPACE/pool
-    BLOBFUSE_MIRROR_APTLY=$BLOBFUSE_APTLY_DATA/aptly
-    BLOBFUSE_MIRROR_PATH=$BLOBFUSE_APTLY_DATA/aptly/$MIRROR_NAME
-    echo "STORAGE_DATA_PATH=$STORAGE_DATA_PATH, APTLY_POOL_PATH=$APTLY_POOL_PATH"
-    mkdir -p "$BLOBFUSE_MIRROR_PATH/pool"
-    echo "ln -s $BLOBFUSE_APTLY_DATA $STORAGE_DATA_PATH"
-    ln -s $BLOBFUSE_APTLY_DATA $STORAGE_DATA_PATH
-  env:
-    StorageAccount: $(StorageAccount)
-    StorageAccountSasToken: $(StorageAccountSasToken)
-  displayName: 'Mount container to load aptly db and pool'
-- bash: |
-    WORKSPACE=${{ parameters.workspace }}
-    PUBLISH_PATH=$WORKSPACE/publish
-    if [ "$(PublishToReplica)" == "y" ]; then
-        export StorageAccount=$StorageAccountReplica
-        export StorageAccountSasToken=$StorageAccountReplicaSasToken
-    fi
-    BLOBFUSE_WEB_PATH=/blobfuse-${StorageAccount}-web
-    azure-pipelines/scripts/mirror/mount-storage.sh "$BLOBFUSE_WEB_PATH" "$StorageAccount" '$web' "$StorageAccountSasToken" "/data/blobfuse-${StorageAccount}-web" y
-    mkdir -p $BLOBFUSE_WEB_PATH/debian
-    echo "ln -s $BLOBFUSE_WEB_PATH/debian $PUBLISH_PATH"
-    ln -s $BLOBFUSE_WEB_PATH/debian $PUBLISH_PATH
-  env:
-    StorageAccount: $(StorageAccount)
-    StorageAccountSasToken: $(StorageAccountSasToken)
-    StorageAccountReplica: $(StorageAccountReplica)
-    StorageAccountReplicaSasToken: $(StorageAccountReplicaSasToken)
-  displayName: 'Mount container to publish mirror'
+    sudo mkdir -p $NFS_MOUNT_POINT
+    sudo mount sec=sys,vers=3,nolock,proto=tcp $(StorageAccountNfs).blob.core.windows.net:/$(StorageAccountNfs)/data $NFS_MOUNT_POINT
+    sudo chmod 777 $NFS_MOUNT_POINT
+
+    echo "Mount storage"
+    azure-pipelines/scripts/mirror/mount-storage.sh "/blobfuse-$(StorageAccount)-data" "$(StorageAccount)" "data" "$STORAGE_PUBLISH_PATH" y
+
+    echo "Mount storage replica"
+    PUBLISH_STORAGE=$(StorageAccount)
+    azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" "$web" "$STORAGE_PUBLISH_PATH" y
+    
+
+    echo "Clean up workspace"
+    [ -e "$WORKSPACE" ] && sudo rm -rf "$WORKSPACE"
+
+    echo 'Make nfs pool link'
+    mkdir -p "$WORKSPACE"
+    mkdir -p "$NFS_MIRROR_POOL"
+    ln -s $NFS_MOUNT_POINT/aptly $WORKSPACE/_aptly
+    ln -s $NFS_MIRROR_POOL $WORKSPACE/pool
+
+    echo 'Make storage data link'
+    ln -s /blobfuse-$(StorageAccount)-data $WORKSPACE/_storage_data
+
+    echo 'Make storage publish link'
+    ln -s $STORAGE_PUBLISH_PATH/debian $WORKSPACE/publish
+  displayName: 'Mount nfs & storages'
