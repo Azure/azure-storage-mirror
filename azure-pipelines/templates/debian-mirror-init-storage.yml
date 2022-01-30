@@ -15,7 +15,6 @@ steps:
     PUBLISH_STORAGE=$(StorageAccount)
     [ "$(PublishToReplica)" == "y" ] && PUBLISH_STORAGE=$(StorageAccountReplica)
     STORAGE_PUBLISH_PATH=/data/blobfus-${PUBLISH_STORAGE}-web
-    [ -z "$NFS_MOUNT_POINT" ] && NFS_MOUNT_POINT=/nfs_data
 
     echo "Mount azure storage NFS 3.0"
     [ ! -d $NFS_MOUNT_POINT ] && sudo mkdir -p $NFS_MOUNT_POINT
@@ -27,11 +26,11 @@ steps:
     sudo chmod 777 $NFS_MOUNT_POINT
 
     echo "Mount storage"
-    azure-pipelines/scripts/mirror/mount-storage.sh "/blobfuse-$(StorageAccount)-data" "$(StorageAccount)" "data" "$STORAGE_PUBLISH_PATH" y
+    azure-pipelines/scripts/mirror/mount-storage.sh "/blobfuse-$(StorageAccount)-data" "$(StorageAccount)" "data" "/data/blobfuse-${StorageAccount}-data" y
 
     echo "Mount storage replica"
     PUBLISH_STORAGE=$(StorageAccount)
-    azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" "$web" "$STORAGE_PUBLISH_PATH" y
+    azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" "$web" "/data/blobfuse-${PUBLISH_STORAGE}-web" y
     
 
     echo "Clean up workspace"
