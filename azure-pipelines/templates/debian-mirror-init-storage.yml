@@ -23,7 +23,7 @@ steps:
       sudo umount $NFS_MOUNT_POINT
     fi
 
-    sudo mount sec=sys,vers=3,nolock,proto=tcp $(StorageAccountNfs).blob.core.windows.net:/$(StorageAccountNfs)/data $NFS_MOUNT_POINT
+    sudo mount -o sec=sys,vers=3,nolock,proto=tcp $(StorageAccountNfs).blob.core.windows.net:/$(StorageAccountNfs)/data $NFS_MOUNT_POINT
     sudo chmod 777 $NFS_MOUNT_POINT
 
     echo "Mount storage"
