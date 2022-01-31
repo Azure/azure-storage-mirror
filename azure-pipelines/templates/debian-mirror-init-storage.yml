@@ -29,7 +29,6 @@ steps:
     azure-pipelines/scripts/mirror/mount-storage.sh "/blobfuse-$(StorageAccount)-data" "$(StorageAccount)" "data" "/data/blobfuse-${StorageAccount}-data" y
 
     echo "Mount storage replica"
-    PUBLISH_STORAGE=$(StorageAccount)
     azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" '$web' "/data/blobfuse-${PUBLISH_STORAGE}-web" y
     
 
