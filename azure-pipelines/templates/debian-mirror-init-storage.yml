@@ -30,7 +30,7 @@ steps:
 
     echo "Mount storage replica"
     PUBLISH_STORAGE=$(StorageAccount)
-    azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" "$web" "/data/blobfuse-${PUBLISH_STORAGE}-web" y
+    azure-pipelines/scripts/mirror/mount-storage.sh "$STORAGE_PUBLISH_PATH" "$PUBLISH_STORAGE" '$web' "/data/blobfuse-${PUBLISH_STORAGE}-web" y
     
 
     echo "Clean up workspace"
