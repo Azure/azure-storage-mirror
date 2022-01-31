@@ -335,7 +335,7 @@ publish_static_website_index()
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
     cat publish_path_dists.list publish_path_pool.list | sort | uniq > publish_path_current.list
     comm -13 $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path_current.list > publish_path.diff
-    for read -r static_path; do
+    while read -r static_path; do
         echo "Make static index for $line"
         if [ -d $static_path ]; then
             cp azure_storage_index.html $static_path/
