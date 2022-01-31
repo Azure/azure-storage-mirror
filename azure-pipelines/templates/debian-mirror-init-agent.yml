@@ -20,7 +20,8 @@ steps:
     # Install blobfuse
     echo 'Install blobfuse'
     if ! dpkg -s blobfuse 1>/dev/null 2>&1; then
-      wget https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb
+      #wget https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb
+      wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
       sudo dpkg -i packages-microsoft-prod.deb
       sudo apt-get update
       sudo apt-get install -y blobfuse
