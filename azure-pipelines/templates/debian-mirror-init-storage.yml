@@ -45,5 +45,6 @@ steps:
     ln -s /blobfuse-$(StorageAccount)-data $WORKSPACE/_storage_data
 
     echo 'Make storage publish link'
+    mkdir -p $STORAGE_PUBLISH_PATH/debian
     ln -s $STORAGE_PUBLISH_PATH/debian $WORKSPACE/publish
   displayName: 'Mount nfs & storages'
