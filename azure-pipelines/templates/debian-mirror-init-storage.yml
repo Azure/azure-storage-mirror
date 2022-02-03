@@ -52,5 +52,6 @@ steps:
     mkdir -p $STORAGE_PUBLISH_PATH/debian/versions
     mkdir -p $STORAGE_PUBLISH_PATH/static/js
     ln -s $STORAGE_PUBLISH_PATH/debian $WORKSPACE/publish
+    cp azure-pipelines/static/html/azure_storage_index.html $STORAGE_PUBLISH_PATH/
     sed "s/STORAGE_ACCOUNT/$PUBLISH_STORAGE/g" azure-pipelines/static/js/azure_storage.js > $STORAGE_PUBLISH_PATH/static/js/azure_storage.js
   displayName: 'Mount nfs & storages'
