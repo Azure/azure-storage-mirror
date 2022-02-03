@@ -1,7 +1,3 @@
-parameters:
-- name: 'publishToReplica'
-  type: string
-  default: 'y'
 jobs:
 - template: jobs-template.yml
   parameters:

@@ -20,7 +20,7 @@ STORAGE_DB_LATEST_VERSION=$STORAGE_DATA/aptly/$MIRROR_NAME/latest_version
 STORAGE_LATEST_VERSION=$STORAGE_DATA/aptly/latest_version
 STORAGE_BUILDS_DIR=$STORAGE_DATA/builds
 STORAGE_STATIC_WEBSITE_DIR=$STORAGE_DATA/static
-STORAGE_STATIC_WEBSITE_PUBLISH_FILE=$STORAGE_DATA/static/publish_path.list
+STORAGE_WEBSITE_PUBLISH_SUFFIX
 PUBLISH_FILESYSTEM_PATH=publish/$MIRROR_FILESYSTEM
 PUBLISH_MIRROR_PATH=$PUBLISH_FILESYSTEM_PATH/dists/$MIRROR_NAME
 HAS_PUBLISH_UPDATE=n
@@ -320,6 +320,8 @@ publish_repos()
 
 publish_static_website_index()
 {
+    local publish_file=$STORAGE_DATA/static/publish_path_primary.list
+    [ "$PUBLISHTOREPLICA" == y ] && publish_file=$STORAGE_DATA/static/publish_path_replica.list
     if [ "$HAS_PUBLISH_UPDATE" != y ]; then
         echo "Skip to publish static website for not publish updated"
         return
@@ -329,12 +331,12 @@ publish_static_website_index()
     find $PUBLISH_FILESYSTEM_PATH/dists -type d >> publish_path_dists.list
     echo "Publish static website for $PUBLISH_MIRROR_PATH by diff"
     mkdir -p $STORAGE_STATIC_WEBSITE_DIR
-    touch $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
+    touch $publish_file
     cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html ./
     grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s#^Filename: #$PUBLISH_FILESYSTEM_PATH/#" \
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
     cat publish_path_dists.list publish_path_pool.list | sort | uniq > publish_path_current.list
-    comm -13 $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path_current.list > publish_path.diff
+    comm -13 $publish_file publish_path_current.list > publish_path.diff
     while read -r static_path; do
         echo "Make static index for $static_path"
         if [ -d $static_path ]; then
@@ -344,9 +346,9 @@ publish_static_website_index()
         fi
     done < publish_path.diff
 
-    echo "Update $STORAGE_STATIC_WEBSITE_PUBLISH_FILE"
-    cat $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path.diff | sort | uniq > publish_path.list
-    cp publish_path.list $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
+    echo "Update $publish_file"
+    cat $publish_file publish_path.diff | sort | uniq > publish_path.list
+    cp publish_path.list $publish_file
     echo "Publish static website for $PUBLISH_MIRROR_PATH complete"
 }
 

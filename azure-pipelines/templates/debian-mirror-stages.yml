@@ -14,8 +14,6 @@ stages:
     MIRROR_VERSION: $[ stageDependencies.InitStage.InitJob.outputs['InitStep.MirrorVersion'] ]
   jobs:
   - template: debian-mirror-jobs-publish-mirror.yml
-    parameters:
-      publishToReplica: y
 - stage: MigrateReplicaStage
   dependsOn:
   - InitStage
@@ -38,8 +36,6 @@ stages:
     MIRROR_VERSION: $[ stageDependencies.InitStage.InitJob.outputs['InitStep.MirrorVersion'] ]
   jobs:
   - template: debian-mirror-jobs-publish-mirror.yml
-    parameters:
-      publishToReplica: n
 - stage: MigratePrimaryStage
   dependsOn:
   - MigrateReplicaStage
