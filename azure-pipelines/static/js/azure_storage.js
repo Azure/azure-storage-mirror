@@ -1,3 +1,4 @@
+var storage = "STORAGE_ACCOUNT";
 function addNodes(iterator, path){
   var text = "";
   path = path.replace(/\/+$/, "") + "/"; // unify the path
@@ -23,7 +24,7 @@ function addNodes(iterator, path){
 
 function listblobs()
 {
-    var endpoint = "https://sonicstoragepublic20.blob.core.windows.net";
+    var endpoint = `https://${storage}.blob.core.windows.net`;
     var path = window.location.pathname;
     var URL = endpoint + "/$web?restype=directory&comp=list&delimiter=/&prefix=" + path + "/";
     var xmlhttp = new XMLHttpRequest();
