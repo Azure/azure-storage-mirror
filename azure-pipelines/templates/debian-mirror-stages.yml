@@ -1,5 +1,7 @@
 stages:
 - stage: InitStage
+  variables:
+    PublishToReplica: n
   jobs:
   - job: InitJob
     steps:

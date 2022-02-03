@@ -24,7 +24,7 @@ steps:
 
     sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
     sudo chmod 777 $NFS_MOUNT_POINT
-    ifi ! mountpoint -q $NFS_MOUNT_POINT; then
+    if ! mountpoint -q $NFS_MOUNT_POINT; then
       echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
       exit 1
     fi
