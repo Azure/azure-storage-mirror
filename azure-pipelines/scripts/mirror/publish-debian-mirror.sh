@@ -330,7 +330,7 @@ publish_static_website_index()
     echo "Publish static website for $PUBLISH_MIRROR_PATH by diff"
     mkdir -p $STORAGE_STATIC_WEBSITE_DIR
     touch $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
-    sed '' > azure_storage_index.html
+    cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html > azure_storage_index.html
     grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s/^Filename: /$PUBLISH_FILESYSTEM_PATH\//" \
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
     cat publish_path_dists.list publish_path_pool.list | sort | uniq > publish_path_current.list
