@@ -28,7 +28,7 @@ if ! mountpoint $MOUNTPOINT; then
     
     export AZURE_STORAGE_ACCOUNT="$STORAGE_ACCOUNT"
     export AZURE_STORAGE_AUTH_TYPE=MSI
-    sudo -E blobfuse "$MOUNTPOINT" --container-name="$CONTAINER_NAME" --tmp-path="$TEMPPATH" -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
+    sudo -E blobfuse "$MOUNTPOINT" --set-content-type=true --container-name="$CONTAINER_NAME" --tmp-path="$TEMPPATH" -o attr_timeout=240 -o entry_timeout=240 -o negative_timeout=120 -o allow_other
     ls -l $MOUNTPOINT
     sleep 10
 fi
