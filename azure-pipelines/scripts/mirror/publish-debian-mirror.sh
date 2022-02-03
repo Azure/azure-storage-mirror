@@ -347,7 +347,7 @@ publish_static_website_index()
     echo "Update $STORAGE_STATIC_WEBSITE_PUBLISH_FILE"
     cat $STORAGE_STATIC_WEBSITE_PUBLISH_FILE publish_path.diff | sort | uniq > publish_path.list
     cp publish_path.list $STORAGE_STATIC_WEBSITE_PUBLISH_FILE
-    "Publish static website for $PUBLISH_MIRROR_PATH complete"
+    echo "Publish static website for $PUBLISH_MIRROR_PATH complete"
 }
 
 
