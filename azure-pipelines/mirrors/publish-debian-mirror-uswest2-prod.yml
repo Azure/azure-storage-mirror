@@ -23,8 +23,6 @@ variables:
   value: 'sonicstoragepublic20'
 - name: StorageAccountReplica
   value: 'sonicstoragepublic21'
-- name: StorageAccountNfs
-  value: 'sonicstoragenfs0'
 
 stages:
 - template: ../templates/debian-mirror-stages.yml
