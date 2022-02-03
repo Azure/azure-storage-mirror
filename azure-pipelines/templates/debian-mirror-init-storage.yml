@@ -10,20 +10,24 @@ steps:
     set -e
     WORKSPACE=${{ parameters.workspace }}
     MIRROR_NAME=${{ parameters.mirrorName }}
-    NFS_MOUNT_POINT=/nfs-$(StorageAccountNfs)-data
+    NFS_MOUNT_POINT=/nfs-data
     NFS_MIRROR_POOL=$NFS_MOUNT_POINT/aptly/$MIRROR_NAME/pool
     PUBLISH_STORAGE=$(StorageAccount)
     [ "$(PublishToReplica)" == "y" ] && PUBLISH_STORAGE=$(StorageAccountReplica)
     STORAGE_PUBLISH_PATH=/blobfuse-${PUBLISH_STORAGE}-web
 
-    echo "Mount azure storage NFS 3.0"
+    echo "Mount NetApp volume"
     [ ! -d $NFS_MOUNT_POINT ] && sudo mkdir -p $NFS_MOUNT_POINT
     if mountpoint $NFS_MOUNT_POINT; then
       sudo umount $NFS_MOUNT_POINT
     fi
 
-    sudo mount -o sec=sys,vers=3,nolock,proto=tcp $(StorageAccountNfs).blob.core.windows.net:/$(StorageAccountNfs)/data $NFS_MOUNT_POINT
+    sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
     sudo chmod 777 $NFS_MOUNT_POINT
+    ifi ! mountpoint -q $NFS_MOUNT_POINT; then
+      echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
+      exit 1
+    fi
 
     echo "Mount storage"
     azure-pipelines/scripts/mirror/mount-storage.sh "/blobfuse-$(StorageAccount)-data" "$(StorageAccount)" "data" "/data/blobfuse-${StorageAccount}-data" y

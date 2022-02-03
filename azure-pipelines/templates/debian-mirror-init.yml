@@ -9,7 +9,7 @@ steps:
 - template: ../templates/debian-mirror-init-storage.yml
 - bash: |
     set -e
-    az login -u $(ApplicationId) --service-principal --tenant $(AzureTenant) -p "$ApplicationKey"
+    az login --identity --allow-no-subscriptions
     az account set -s $(SubscriptionId)
     resource_group=$(CDNResourceGroup)
     endpoint_name=$(CDNEndpointName)
@@ -23,9 +23,6 @@ steps:
         echo "The expected priority of the origin $cdn_replicaorigin_name in cdn endpoint $endpoint_name is 4, but the priority is $priority" 2>&1
         exit 1
     fi
-  env:
-    ApplicationKey: '$(ApplicationKey)'
-    AZURE_CONFIG_DIR: '.azureconfig'
   displayName: 'Check CDN Endpoint status'
 - bash: |
     set -e

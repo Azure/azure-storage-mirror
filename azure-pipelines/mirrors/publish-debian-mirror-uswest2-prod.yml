@@ -18,7 +18,6 @@ schedules:
 pool: sonic-mirror-westus2-1
 variables:
 - group: sonic-kv-1
-- group: sonic-azp-common-1
 - group: sonic-azp-westus2-1
 - name: StorageAccount
   value: 'sonicstoragepublic20'
