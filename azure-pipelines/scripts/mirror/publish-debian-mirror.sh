@@ -56,7 +56,12 @@ validate_input_variables()
     if ! readlink _storage_data > /dev/null; then
         echo "$WORK_DIR/_storage_data is not a symbol link" 1>&2
         exit 1
-    fi  
+    fi
+
+    if ! readlink _storage_publish > /dev/null; then
+        echo "$WORK_DIR/_storage_publish is not a symbol link" 1>&2
+        exit 1
+    fi
 }
 
 prepare_workspace()
@@ -146,7 +151,7 @@ update_repos()
         # Create the aptly mirror if not existing
         if ! aptly -config $APTLY_CONFIG mirror show $mirror > /dev/null 2>&1; then
             if [ "$UPDATE_MIRROR" != "y" ]; then
-                echo "The mirror does not exit $mirror, not to create it, since UPDATE_MIRROR=$UPDATE_MIRROR" 1>&2
+                echo "The mirror $mirror does not exist, not to create it, since UPDATE_MIRROR=$UPDATE_MIRROR" 1>&2
                 exit 1
             fi
             WITH_SOURCES="-with-sources"
@@ -325,6 +330,9 @@ publish_static_website_index()
         echo "Skip to publish static website for not publish updated"
         return
     fi
+
+    cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html _storage_publish/
+    cp azure_storage.js > _storage_publish/static/js/azure_storage.js
     echo publish > publish_path_dists.list
     echo $PUBLISH_FILESYSTEM_PATH >> publish_path_dists.list 
     find $PUBLISH_FILESYSTEM_PATH/dists -type d >> publish_path_dists.list
