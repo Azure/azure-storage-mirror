@@ -21,7 +21,6 @@ STORAGE_LATEST_VERSION=$STORAGE_DATA/aptly/latest_version
 STORAGE_BUILDS_DIR=$STORAGE_DATA/builds
 STORAGE_STATIC_WEBSITE_DIR=$STORAGE_DATA/static
 PUBLISH_FILESYSTEM_PATH=publish/$MIRROR_FILESYSTEM
-PUBLISH_MIRROR_PATH=$PUBLISH_FILESYSTEM_PATH/dists/$MIRROR_NAME
 HAS_PUBLISH_UPDATE=n
 
 PUBLISH_VERSIONS_DIR=publish/versions
@@ -326,6 +325,9 @@ publish_repos()
 
 publish_static_website_index()
 {
+    local dist=$1
+    local distname=$(echo $dist | tr '/' '_')
+    local publish_dist_path=$PUBLISH_FILESYSTEM_PATH/dists/$distname
     local publish_file=$STORAGE_DATA/static/publish_path_primary.list
     [ "$PUBLISHTOREPLICA" == y ] && publish_file=$STORAGE_DATA/static/publish_path_replica.list
     if [ "$HAS_PUBLISH_UPDATE" != y ]; then
@@ -338,13 +340,13 @@ publish_static_website_index()
     echo publish > publish_path_dists.list
     echo $PUBLISH_FILESYSTEM_PATH >> publish_path_dists.list 
     find $PUBLISH_FILESYSTEM_PATH/dists -type d >> publish_path_dists.list
-    echo "Publish static website for $PUBLISH_MIRROR_PATH by diff"
+    echo "Publish static website for $publish_dist_path by diff"
     mkdir -p $STORAGE_STATIC_WEBSITE_DIR
     touch $publish_file
     cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html ./
-    grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s/^Filename: //" \
+    grep -h Filename: $(find "$publish_dist_path" -name Packages) | sed "s/^Filename: //" \
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
-    grep -h Directory: $(find "$PUBLISH_MIRROR_PATH" -name Sources) | sed "s/^Directory: //" \
+    grep -h Directory: $(find "$publish_dist_path" -name Sources) | sed "s/^Directory: //" \
      | sort | uniq >> publish_path_pool.list
     while read -r pool_path; do
         while [ $pool_path != "." ] && [ $pool_path != "/" ]; do
@@ -367,7 +369,7 @@ publish_static_website_index()
     echo "Update $publish_file"
     cat $publish_file publish_path.diff | sort | uniq > publish_path.list
     cp publish_path.list $publish_file
-    echo "Publish static website for $PUBLISH_MIRROR_PATH complete"
+    echo "Publish static website for $publish_dist_path complete"
 }
 
 
@@ -379,6 +381,7 @@ main()
         echo "update repos for url=$MIRROR_URL name=$MIRROR_NAME distribution=$distribution architectures=$MIRROR_ARICHTECTURES components=$MIRROR_COMPONENTS"
         update_repos $MIRROR_NAME "$MIRROR_URL" $distribution "$MIRROR_ARICHTECTURES" "$MIRROR_COMPONENTS"
         publish_repos $MIRROR_NAME $distribution "$MIRROR_ARICHTECTURES" "$MIRROR_COMPONENTS"
+        publish_static_website_index $distribution
     done
 
     # Update the latest version of the distributions in the mirror
@@ -386,7 +389,6 @@ main()
     if [ ! -z "$version" ]; then
         echo $version > $PUBLISH_VERSIONS_DIR/version-${MIRROR_NAME}
     fi
-    publish_static_website_index
     save_workspace
 }
 
