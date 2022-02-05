@@ -332,7 +332,7 @@ publish_static_website_index()
     fi
 
     cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html _storage_publish/
-    cp azure_storage.js > _storage_publish/static/js/azure_storage.js
+    cp azure_storage.js _storage_publish/static/js/azure_storage.js
     echo publish > publish_path_dists.list
     echo $PUBLISH_FILESYSTEM_PATH >> publish_path_dists.list 
     find $PUBLISH_FILESYSTEM_PATH/dists -type d >> publish_path_dists.list
