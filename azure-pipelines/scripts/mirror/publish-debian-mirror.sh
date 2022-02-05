@@ -184,6 +184,7 @@ update_repos()
         local has_error=n
         local retry=5
         # Update the aptly mirror with retry
+        set -o pipefail
         for ((i=1;i<=$retry;i++)); do
             echo "Try to update the mirror, retry step $i of $retry"
             aptly -config $APTLY_CONFIG -ignore-signatures mirror update -max-tries=5 $mirror | tee $logfile
@@ -197,6 +198,7 @@ update_repos()
                 has_error=y
             fi
         done
+        set +o pipefail
         if [ "$success" != "y" ]; then
             echo "Failed to update the mirror $mirror" 1>&2
             exit 1
