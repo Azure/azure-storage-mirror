@@ -4,8 +4,6 @@ jobs:
     jobVariables:
       MIRROR_COMPONENTS: 'contrib,non-free,main'
       MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
-    jobNames:
-    - bullseye-security
     preSteps:
     - template: debian-mirror-init-agent.yml
     - template: debian-mirror-init-storage.yml
