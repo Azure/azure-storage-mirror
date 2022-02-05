@@ -340,8 +340,17 @@ publish_static_website_index()
     mkdir -p $STORAGE_STATIC_WEBSITE_DIR
     touch $publish_file
     cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html ./
-    grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s#^Filename: #$PUBLISH_FILESYSTEM_PATH/#" \
+    grep -h Filename: $(find "$PUBLISH_MIRROR_PATH" -name Packages) | sed "s/^Filename: //" \
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
+    grep -h Directory: $(find "$PUBLISH_MIRROR_PATH" -name Sources) | sed "s/^Directory: //" \
+     | sort | uniq >> publish_path_pool.list
+    while read -r pool_path; do
+        while [ $pool_path != "." ] && [ $pool_path != "/" ]; do
+          echo "$PUBLISH_FILESYSTEM_PATH/$pool_path" >> publish_path_pool.list.tmp
+          pool_path=$(dirname $pool_path)
+        done
+    done < publish_path_pool.list
+    cat publish_path_pool.list.tmp | sort | uniq >> publish_path_pool.list
     cat publish_path_dists.list publish_path_pool.list | sort | uniq > publish_path_current.list
     comm -13 $publish_file publish_path_current.list > publish_path.diff
     while read -r static_path; do
