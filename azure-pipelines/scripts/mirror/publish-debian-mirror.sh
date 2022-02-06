@@ -343,9 +343,10 @@ publish_static_website_index()
     mkdir -p $STORAGE_STATIC_WEBSITE_DIR
     touch $publish_file
     cp $SOURCE_DIR/azure-pipelines/static/html/azure_storage_index.html ./
-    grep -h Filename: $(find "$publish_dist_path" -name Packages) | sed "s/^Filename: //" \
+    touch no-content-file
+    grep -h Filename: $(find "$publish_dist_path" -type f -name Packages) no-content-file | sed "s/^Filename: //" \
      | sed 's#\/[^\/]\+$##g' | sort | uniq > publish_path_pool.list
-    grep -h Directory: $(find "$publish_dist_path" -name Sources) | sed "s/^Directory: //" \
+    grep -h Directory: $(find "$publish_dist_path" -type f -name Sources) no-content-file | sed "s/^Directory: //" \
      | sort | uniq >> publish_path_pool.list
     while read -r pool_path; do
         while [ $pool_path != "." ] && [ $pool_path != "/" ]; do
