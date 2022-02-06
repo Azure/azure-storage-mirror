@@ -186,8 +186,7 @@ update_repos()
         set -o pipefail
         for ((i=1;i<=$retry;i++)); do
             echo "Try to update the mirror, retry step $i of $retry"
-            aptly -config $APTLY_CONFIG -ignore-signatures mirror update -max-tries=5 $mirror | tee $logfile
-            if [ "$?" -eq "0" ]; then
+            if aptly -config $APTLY_CONFIG -ignore-signatures mirror update -max-tries=5 $mirror | tee $logfile; then
                 echo "Successfully update the mirror $mirror"
                 success=y
                 break
