@@ -196,6 +196,19 @@ update_repos()
                 has_error=y
             fi
         done
+
+        if [ "$success" != "y" ] && [ "$mirror" == "mirror-jessie-security-jessie_updates-main" ]; then
+            aptly -config $APTLY_CONFIG mirror edit -with-sources=false -ignore-signatures  -archive-url='https://packages.trafficmanager.net/debian/debian-security' $mirror
+            if aptly -config $APTLY_CONFIG -ignore-signatures mirror update -max-tries=5 $mirror | tee $logfile; then
+                echo "Successfully update the mirror $mirror"
+            fi
+            aptly -config $APTLY_CONFIG mirror edit -with-sources=false -ignore-signatures  -archive-url="$url" $mirror
+            if aptly -config $APTLY_CONFIG -ignore-signatures mirror update -max-tries=5 $mirror | tee $logfile; then
+                echo "Successfully update the mirror $mirror"
+                success=y
+            fi
+        fi
+
         set +o pipefail
         if [ "$success" != "y" ]; then
             echo "Failed to update the mirror $mirror" 1>&2
