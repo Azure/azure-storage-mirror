@@ -1,0 +1,25 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+parameters:
+- name: mirrors
+  type: object
+  default:
+  - name: debian
+    endpoint: ftp.us.debian.org
+  - name: debian-security
+    endpoint: security.debian.org
+
+jobs:
+- ${{ each mirror in parameters.mirrors }}:
+  - job: ${{ replace(mirror.name, '-', '_') }}
+    timeoutInMinutes: 600
+    variables:
+      NFS_MOUNT_POINT: /nfs-mirror
+    steps:
+    - template: debian-mirror-snapshot.yml
+      parameters:
+        mirror: ${{ mirror.name }}
+        endpoint: ${{ mirror.endpoint }}

@@ -1,0 +1,88 @@
+# Starter pipeline
+# Start with a minimal pipeline that you can customize to build and deploy your code.
+# Add steps that build, run tests, deploy, and more:
+# https://aka.ms/yaml
+
+parameters:
+- name: mirror
+  type: string
+- name: endpoint
+  type: string
+
+steps:
+  - script: |
+      set -ex
+      sudo apt-get update
+      sudo apt-get install -y nfs-common
+      sudo apt-get install -y apt-mirror
+      wget -O- "https://aka.ms/downloadazcopy-v10-linux" | tar -zxf - --strip-components=1
+      sudo mv -f azcopy /usr/local/bin/
+      azcopy  --version
+      sudo mkdir -p $NFS_MOUNT_POINT
+      sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
+      sudo chmod 777 $NFS_MOUNT_POINT
+      if ! mountpoint -q $NFS_MOUNT_POINT; then
+        echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
+        exit 1
+      fi
+    displayName: "Init"
+  - script: |
+      set -ex
+      MIRROR=${{ parameters.mirror }}
+      ENDPOINT=${{ parameters.endpoint }}
+      sudo mkdir -p $NFS_MOUNT_POINT/mirrors/apt-mirror
+      SNAPSHOT_TIME=$(date +%Y%m%dT%H%M%SZ)
+      SNAPSHOT_MIRROR=$NFS_MOUNT_POINT/mirrors/snapshot/$MIRROR
+      SNAPSHOT_TMP=$SNAPSHOT_MIRROR/tmp
+      SNAPSHOT_POINT=$SNAPSHOT_MIRROR/$SNAPSHOT_TIME
+      SNAPSHOT_LATEST=$SNAPSHOT_MIRROR/latest
+      sudo apt-mirror $(Build.SourcesDirectory)/azure-pipelines/config/mirror.list.$MIRROR
+      sudo rm -rf $SNAPSHOT_TMP
+      sudo mkdir -p $SNAPSHOT_TMP/dists
+      sudo ln -sf "../../../apt-mirror/$MIRROR/mirror/$ENDPOINT/$MIRROR/pool" $SNAPSHOT_TMP/pool
+      DISTS=$NFS_MOUNT_POINT/mirrors/apt-mirror/$MIRROR/mirror/$ENDPOINT/$MIRROR/dists
+      LAST_SNAPSHOT=
+      if [ -e $SNAPSHOT_LATEST ]; then
+        LAST_SNAPSHOT=$(realpath $SNAPSHOT_LATEST |  awk -F'/' '{print  $NF}')
+      fi
+      for dist in `ls $DISTS`
+      do
+        dist_updates=$dist
+        if [ -e $DISTS/$dist/updates ]; then
+          dist_updates=$dist/updates
+        fi
+        cursha256=$(sha256sum $DISTS/$dist_updates/Release  | cut -d " " -f1)
+        snsha256=
+        if [ -e $SNAPSHOT_LATEST/dists/$dist_updates/Release ]; then
+          snsha256=$(sha256sum $SNAPSHOT_LATEST/dists/$dist_updates/Release | cut -d " " -f1)
+        fi
+        if [ "$cursha256" == "$snsha256" ]; then
+          dist_snapshot=$(realpath $SNAPSHOT_LATEST/dists/$dist |  awk -F'/' '{print  $(NF-2)}')
+          sudo ln -s ../../$dist_snapshot/dists/$dist $SNAPSHOT_TMP/dists/$dist
+        else
+          sudo cp -r $DISTS/$dist $SNAPSHOT_TMP/dists/
+          if [ "$MIRROR" == "debian-security" ]; then
+            [ -e $SNAPSHOT_TMP/dists/$dist/updates ] || sudo ln -s . $SNAPSHOT_TMP/dists/$dist/updates
+            if [ "$dist" == "jessie" ] || [ "$dist" == "stretch" ] || [ "$dist" == "buster" ]; then
+              sudo ln -sf $dist/updates ${dist}_updates
+              sudo ln -sf $dist/updates ${dist}-security
+            fi
+          fi
+        fi
+      done
+      sudo mv $SNAPSHOT_TMP $SNAPSHOT_POINT
+      sudo rm -f $SNAPSHOT_MIRROR/latest
+      sudo ln -sf $SNAPSHOT_TIME $SNAPSHOT_MIRROR/latest
+    displayName: "publish mirrors"
+  - script: |
+      set -ex
+      MIRROR=${{ parameters.mirror }}
+      ENDPOINT=${{ parameters.endpoint }}
+      POOL_PATH=apt-mirror/$MIRROR/mirror/$ENDPOINT/$MIRROR/pool
+      MIRROR_POOL=$NFS_MOUNT_POINT/mirrors/$POOL_PATH
+      export AZCOPY_AUTO_LOGIN_TYPE=MSI
+      azcopy sync $NFS_MOUNT_POINT/mirrors/snapshot/$MIRROR/ https://$(StorageAccount).blob.core.windows.net/mirrors/snapshot/$MIRROR/ --recursive=true
+      exclude_pattern=$(sed '/^[[:space:]]*$/d' azure-pipelines/config/debian-packages-denylist.conf | sed 's/$/*/' | paste -sd ";" -)
+      echo "exclude_pattern=$exclude_pattern"
+      azcopy sync $MIRROR_POOL/ https://$(StorageAccount).blob.core.windows.net/mirrors/$POOL_PATH/ --exclude-pattern="$exclude_pattern" --recursive=true
+    displayName: "backup mirrors"
