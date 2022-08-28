@@ -18,17 +18,52 @@ deb-arm64 http://ftp.us.debian.org/debian bullseye main contrib non-free
 deb-armhf http://ftp.us.debian.org/debian bullseye main contrib non-free
 deb-src http://ftp.us.debian.org/debian bullseye main contrib non-free
 
+deb-amd64 http://ftp.us.debian.org/debian bullseye-updates main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian bullseye-updates main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian bullseye-updates main contrib non-free
+deb-src http://ftp.us.debian.org/debian bullseye-updates main contrib non-free
+
+deb-amd64 http://ftp.us.debian.org/debian bullseye-backports main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian bullseye-backports main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian bullseye-backports main contrib non-free
+deb-src http://ftp.us.debian.org/debian bullseye-backports main contrib non-free
+
 deb-amd64 http://ftp.us.debian.org/debian buster main contrib non-free
 deb-arm64 http://ftp.us.debian.org/debian buster main contrib non-free
 deb-armhf http://ftp.us.debian.org/debian buster main contrib non-free
 deb-src http://ftp.us.debian.org/debian buster main contrib non-free
+
+deb-amd64 http://ftp.us.debian.org/debian buster-updates main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian buster-updates main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian buster-updates main contrib non-free
+deb-src http://ftp.us.debian.org/debian buster-updates main contrib non-free
+
+deb-amd64 http://ftp.us.debian.org/debian buster-backports main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian buster-backports main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian buster-backports main contrib non-free
+deb-src http://ftp.us.debian.org/debian buster-backports main contrib non-free
 
 deb-amd64 http://ftp.us.debian.org/debian stretch main contrib non-free
 deb-arm64 http://ftp.us.debian.org/debian stretch main contrib non-free
 deb-armhf http://ftp.us.debian.org/debian stretch main contrib non-free
 deb-src http://ftp.us.debian.org/debian stretch main contrib non-free
 
+deb-amd64 http://ftp.us.debian.org/debian stretch-updates main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian stretch-updates main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian stretch-updates main contrib non-free
+deb-src http://ftp.us.debian.org/debian stretch-updates main contrib non-free
+
+deb-amd64 http://ftp.us.debian.org/debian stretch-backports main contrib non-free
+deb-arm64 http://ftp.us.debian.org/debian stretch-backports main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian stretch-backports main contrib non-free
+deb-src http://ftp.us.debian.org/debian stretch-backports main contrib non-free
+
+
+
 deb-amd64 http://ftp.us.debian.org/debian jessie main contrib non-free
-#deb-arm64 http://ftp.us.debian.org/debian jessie main contrib non-free
 deb-armhf http://ftp.us.debian.org/debian jessie main contrib non-free
 deb-src http://ftp.us.debian.org/debian jessie main contrib non-free
+
+deb-amd64 http://ftp.us.debian.org/debian jessie-updates main contrib non-free
+deb-armhf http://ftp.us.debian.org/debian jessie-updates main contrib non-free
+deb-src http://ftp.us.debian.org/debian jessie-updates main contrib non-free
