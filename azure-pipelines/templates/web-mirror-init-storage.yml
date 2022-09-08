@@ -5,9 +5,15 @@ parameters:
 steps:
 - bash: |
     sudo apt-get update
-    sudo apt-get install -y unzip
+    sudo apt-get install -y unzip wget
+    . /etc/os-release 
+    wget https://packages.microsoft.com/config/ubuntu/$VERSION_ID/packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y blobfuse
   displayName: 'Install packages'
 - bash: |
+    set -e
     # Init workspace
     WORKSPACE=${{ parameters.workspace }}
     echo "pwd=$(pwd)"
