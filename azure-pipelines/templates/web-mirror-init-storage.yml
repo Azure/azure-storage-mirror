@@ -4,6 +4,10 @@ parameters:
   default: 'work'
 steps:
 - bash: |
+    sudo apt-get update
+    sudo apt-get install -y unzip
+  displayName: 'Install packages'
+- bash: |
     # Init workspace
     WORKSPACE=${{ parameters.workspace }}
     echo "pwd=$(pwd)"
