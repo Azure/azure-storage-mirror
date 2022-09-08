@@ -13,7 +13,10 @@ read_packages_per_url()
     [ -f versions.zip ] && rm versions.zip
     [ -d versions ] && rm -rf versions
     echo "Get the version files from $url"
-    wget -O versions.zip "$url"
+    wget -O versions.zip "$url" || {
+      echo "Failed to download from $url, skipped
+      return 0
+    }
     if [ ! -f versions.zip ]; then
         echo "Failed to download versions.zip from $url" 1>&2
         exit 1
