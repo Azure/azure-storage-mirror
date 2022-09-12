@@ -13,6 +13,7 @@ steps:
   - script: |
       set -ex
       sudo apt-get update
+      sudo apt --fix-broken install
       sudo apt-get install -y nfs-common
       sudo apt-get install -y apt-mirror
       wget -O- "https://aka.ms/downloadazcopy-v10-linux" | tar -zxf - --strip-components=1
