@@ -30,12 +30,13 @@ steps:
     if ! dpkg -s aptly 1>/dev/null 2>&1; then
       sudo apt-get update
       sudo apt-get install -y aptly
-      . /etc/os-release 
-      if [ "$VERSION_ID" == "20.04" ]; then
-        sudo apt-get install -y gpgv2 gpgv gnupg2
-        wget 'https://sonicstoragepublic20.blob.core.windows.net/public/aptly/1.4.0/aptly_1.4.0%2Bds1-7_amd64.deb' -O aptly_1.4.0+ds1-7_amd64.deb
-        sudo dpkg -i --force-all aptly_1.4.0+ds1-7_amd64.deb
-      fi
+    fi
+
+    . /etc/os-release
+    if [ "$VERSION_ID" == "20.04" ]; then
+      sudo apt-get install -y gpgv2 gpgv gnupg2
+      wget 'https://sonicstoragepublic20.blob.core.windows.net/public/aptly/1.4.0/aptly_1.4.0%2Bds1-7_amd64.deb' -O aptly_1.4.0+ds1-7_amd64.deb
+      sudo dpkg -i --force-all aptly_1.4.0+ds1-7_amd64.deb
     fi
     # Install nfs-common
     if ! dpkg -s nfs-common 1>/dev/null 2>&1; then
