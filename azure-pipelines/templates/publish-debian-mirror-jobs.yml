@@ -39,6 +39,7 @@ jobs:
     jobVariables:
       MIRROR_COMPONENTS: 'contrib,non-free,main'
       MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
+      NFS_MOUNT_POINT: /nfs
     preSteps:
     - script: |
         set -ex
@@ -53,6 +54,7 @@ jobs:
           sudo dpkg -i --force-all aptly_1.4.0+ds1-7_amd64.deb
           sudo apt --fix-broken install -y
         fi
+        sudo mkdir -p $NFS_MOUNT_POINT
         sudo umount $NFS_MOUNT_POINT || true
         sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
         sudo chmod 777 $NFS_MOUNT_POINT
