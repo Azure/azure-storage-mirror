@@ -87,7 +87,10 @@ jobs:
               MIRROR_FILESYSTEM: ${{ fileSystem.name }}-v2
               MIRROR_URL: ${{ fileSystem.url }}
               MIRROR_DISTRIBUTIONS: ${{ mirror.distributions }}
-              MIRROR_ARICHTECTURES: ${{ mirror.architectures }}
+              ${{ if ne(mirror.architectures, '') }}:
+                MIRROR_ARICHTECTURES: ${{ mirror.architectures }}
+              ${{ if ne(mirror.components, '') }}:
+                MIRROR_COMPONENTS: ${{ mirror.components }}
             steps:
             - script: |
                 azure-pipelines/scripts/mirror/publish-debian-mirror-v2.sh -n "$MIRROR_NAME" -u "$MIRROR_URL" -d "$MIRROR_DISTRIBUTIONS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS" -b "$STORAGE_ACCOUNT"
