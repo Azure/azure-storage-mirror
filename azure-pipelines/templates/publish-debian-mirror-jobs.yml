@@ -63,6 +63,12 @@ jobs:
           exit 1
         fi
 
+        if [ -z "$(which azcopy)" ]; then
+          wget -O- "https://aka.ms/downloadazcopy-v10-linux" | tar -zxf - --strip-components=1
+          sudo mv -f azcopy /usr/local/bin/
+          azcopy --version
+        fi
+
         az login --identity -u $CLIENT_ID
         azcopy login --identity --identity-client-id $CLIENT_ID
       displayName: 'Init agent'
