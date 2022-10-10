@@ -1,0 +1,109 @@
+parameters:
+- name: 'mirrorType'
+  type: string
+  default: 'aptly'
+  values:
+  - aptly
+  - apt-mirror
+- name: 'fileSystems'
+  type: object
+  default:
+  - name: 'debian'
+    url: 'http://deb.debian.org/debian'
+    mirrors:
+    - name: bullseye
+      distributions: 'bullseye,bullseye-updates,bullseye-backports'
+    - name: buster
+      distributions: 'buster,buster-updates,buster-backports'
+    - name: stretch
+      distributions: 'stretch,stretch-updates,stretch-backports'
+    - name: jessie
+      distributions: 'jessie,jessie-updates'
+      architectures: 'amd64,armhf'
+  - name: 'debian-security'
+    url: 'http://security.debian.org/debian-security'
+    mirrors:
+    - name: 'bullseye-security'
+      distributions: 'bullseye-security'
+    - name: 'buster-security'
+      distributions: 'buster/updates'
+    - name: 'stretch-security'
+      distributions: 'stretch/updates'
+    - name: 'jessie-security'
+      distributions: 'jessie/updates'
+      architectures: 'amd64,armhf'
+
+jobs:
+- template: jobs-template.yml
+  parameters:
+    jobVariables:
+      MIRROR_COMPONENTS: 'contrib,non-free,main'
+      MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
+    preSteps:
+    - script:
+        set -ex
+        sudo apt-get update
+        sudo apt-get install -y aptly nfs-common jq
+        curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+
+        . /etc/os-release
+        if [ "$VERSION_ID" == "20.04" ]; then
+          sudo apt-get install -y gpgv2 gpgv gnupg2
+          wget 'https://sonicstoragepublic20.blob.core.windows.net/public/aptly/1.4.0/aptly_1.4.0%2Bds1-7_amd64.deb' -O aptly_1.4.0+ds1-7_amd64.deb
+          sudo dpkg -i --force-all aptly_1.4.0+ds1-7_amd64.deb
+          sudo apt --fix-broken install -y
+        fi
+        sudo umount $NFS_MOUNT_POINT || true
+        sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
+        sudo chmod 777 $NFS_MOUNT_POINT
+        if ! mountpoint -q $NFS_MOUNT_POINT; then
+          echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
+          exit 1
+        fi
+
+        az login --identity -u $CLIENT_ID
+        azcopy login --identity --identity-client-id $CLIENT_ID
+      displayName: 'Init agent'
+    - script: |
+        echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT"
+        echo "MIRROR_FILESYSTEM=$MIRROR_FILESYSTEM"
+        echo "MIRROR_URL=$MIRROR_URL"
+        echo "MIRROR_DISTRIBUTIONS=$MIRROR_DISTRIBUTIONS"
+        echo "MIRROR_COMPONENTS=$MIRROR_COMPONENTS"
+        echo "MIRROR_ARICHTECTURES=$MIRROR_ARICHTECTURES"
+        echo "MIRROR_VERSION=$MIRROR_VERSION"
+        echo "GROUP_NAME=$GROUP_NAME"
+        echo "GROUP_NAMES=$GROUP_NAMES"
+        echo "UpdateMirror=$(UpdateMirror)"
+        echo "GROUP_NAMES=$GROUP_NAMES"
+      displayName: 'Print Parameters'
+    stepGroups:
+    - ${{ each fileSystem in parameters.fileSystems }}:
+      - ${{ if eq(parameters.mirrorType, 'aptly') }}:
+        - ${{ each mirror in fileSystem.mirrors }}:
+          - name: ${{ mirror.name }}
+            variables:
+              MIRROR_NAME: ${{ mirror.name }}
+              MIRROR_FILESYSTEM: ${{ fileSystem.name }}-v2
+              MIRROR_URL: ${{ fileSystem.url }}
+              MIRROR_DISTRIBUTIONS: ${{ mirror.distributions }}
+              MIRROR_ARICHTECTURES: ${{ mirror.architectures }}
+            steps:
+            - script: |
+                azure-pipelines/scripts/mirror/publish-debian-mirror-v2.sh -n "$MIRROR_NAME" -u "$MIRROR_URL" -d "$MIRROR_DISTRIBUTIONS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS" -b "$STORAGE_ACCOUNT"
+              env:
+                PASSPHRASE: $(sonic-gpg-passphrase)
+                GPG_KEY: $(sonic-gpg-enc-private-key)
+                UPDATE_MIRROR: $(UpdateMirror)
+                GPG_PUBLIC_KEY2: $(sonic-gpg-public-key-2)
+              displayName: 'Publish Aptly Mirror'
+      - ${{ else }}:
+        - name: ${{ fileSystem.name }}
+          variables:
+            MIRROR_FILESYSTEM: ${{ fileSystem.name }}
+            MIRROR_URL: ${{ fileSystem.url }}
+            MIRRORS: '${{ convertToJson(fileSystem.mirrors) }}'
+          steps:
+          - script: |
+               azure-pipelines/scripts/mirror/publish-debian-snapshot.sh  -n "$MIRROR_FILESYSTEM" -u "$MIRROR_URL" -j "$MIRRORS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS" -b "$STORAGE_ACCOUNT"
+            displayName: 'Publish Apt Mirror'
