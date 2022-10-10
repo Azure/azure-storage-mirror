@@ -297,8 +297,8 @@ publish_repos()
     local archs=$3
     local components=$4
     local distname=$(echo $dist | tr '/' '_')
-    local options=
-    [[ "$dist" == *-backports ]] && options="-notautomatic=yes -butautomaticupgrades=yes"
+    local options="-force-overwrite"
+    [[ "$dist" == *-backports ]] && options="$options -notautomatic=yes -butautomaticupgrades=yes"
     local publish_archs=$archs,source
     [[ "$name"  == *jessie* ]] && publish_archs=$archs
 
