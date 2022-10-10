@@ -40,7 +40,7 @@ jobs:
       MIRROR_COMPONENTS: 'contrib,non-free,main'
       MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
     preSteps:
-    - script:
+    - script: |
         set -ex
         sudo apt-get update
         sudo apt-get install -y aptly nfs-common jq
