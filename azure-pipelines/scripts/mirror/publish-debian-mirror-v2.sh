@@ -71,10 +71,11 @@ fi
 
 [ -z "$NFS_ROOT" ] && NFS_ROOT=/nfs
 [ -z "$MIRROR_ROOT" ] && MIRROR_ROOT=/mirrors
-MIRROR_REL_DIR=v1/aptly/work/$MIRROR_NAME
-PUBLISH_DIR=$NFS_ROOT/v1/aptly/publish
-WORK_DIR=$MIRROR_ROOT/$MIRROR_REL_DIR
+MIRROR_REL_DIR=v1/aptly
 MIRROR_NFS_DIR=$NFS_ROOT/$MIRROR_REL_DIR
+NFS_WORK_DIR=$NFS_ROOT/$MIRROR_REL_DIR/work/$MIRROR_NAME
+WORK_DIR=$MIRROR_ROOT/$MIRROR_REL_DIR/work
+PUBLISH_DIR=$MIRROR_NFS_DIR/publish
 SOURCE_DIR=$(pwd)
 SAVE_WORKSPACE=n
 APTLY_CONFIG=aptly-debian.conf
@@ -90,6 +91,8 @@ HAS_PUBLISH_UPDATE=n
 
 FILESYSTEM="filesystem:$MIRROR_FILESYSTEM:"
 
+
+sudo rm -rf $WORK_DIR
 mkdir -p $WORK_DIR
 cd $WORK_DIR
 
@@ -132,13 +135,13 @@ prepare_workspace()
     if [ "$CREATE_DB" == "y" ]; then
         return
     fi
-    local latest_db=./latest.tar.gz
+    local latest_db=$NFS_WORK_DIR/latest.tar.gz
     if [ ! -f "$latest_db" ]; then
         echo "The databse backup file $latest_db does not exist, please restore the file, add CREATE_DB=y option or recreat it." 1>&2
         exit 1
     fi
 
-    tar -xzvf "./$latest_db" -C .
+    tar -xzvf "$latest_db" -C .
 }
 
 save_workspace()
@@ -167,11 +170,12 @@ save_workspace()
     echo "Backup the aptly database"
     tar -czvf "$package" db
     echo $package > latest
-    azcopy cp ./$package "$STORAGE_MIRROR_URL/dbs/"
-    azcopy cp ./latest "$STORAGE_MIRROR_URL/dbs/"
-    rm -f prev.tar.gz
-    mv -f latest.tar.gz prev.tar.gz 2>/dev/null || true
-    cp ./$package "latest.tar.gz"
+    azcopy cp ./$package "$STORAGE_MIRROR_URL/work/$MIRROR_NAME/dbs/"
+    azcopy cp ./latest "$STORAGE_MIRROR_URL/work/$MIRROR_NAME/dbs/"
+    rm -f $NFS_WORK_DIR/prev.tar.gz
+    mv -f $NFS_WORK_DIR/latest.tar.gz $NFS_WORK_DIR/prev.tar.gz 2>/dev/null || true
+    mkdir $NFS_WORK_DIR/
+    cp ./$package "$NFS_WORK_DIR/latest.tar.gz"
  
     echo "Saving workspace to $package is complete"
 }
@@ -297,7 +301,7 @@ publish_repos()
     local archs=$3
     local components=$4
     local distname=$(echo $dist | tr '/' '_')
-    local options="-force-overwrite"
+    local options=
     [[ "$dist" == *-backports ]] && options="$options -notautomatic=yes -butautomaticupgrades=yes"
     local publish_archs=$archs,source
     [[ "$name"  == *jessie* ]] && publish_archs=$archs
@@ -315,6 +319,10 @@ publish_repos()
 
     if [ "$FORCE_PUBLISH" == "y" ]; then
         echo "Force publish mirror"
+    fi
+
+    if [ "$FORCE_OVERWITE" == "y" ]; then
+        options="$options -force-overwrite"
     fi
 
     echo "Publish the mirror: $name/$dist/$archs/$components"
