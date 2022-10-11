@@ -63,19 +63,40 @@ while getopts "n:p:u:d:a:c:b:i:f" opt; do
     esac
 done
 
+if [ -z "$MIRROR_FILESYSTEM" ]; then
+    echo "MIRROR_FILESYSTEM not set" 1>&2
+    exit 1
+fi
+
 if [ -z "$MIRROR_NAME" ] || [ -z "$MIRROR_DISTRIBUTIONS" ] || [ -z "$MIRROR_URL" ] || 
    [ -z "$MIRROR_ARICHTECTURES" ] || [ -z "$MIRROR_COMPONENTS" ]; then
     echo "Some required options not set, see usage as below:" 1>&2
     usage
 fi
 
+
+# Persisted NFS:
+# /nfs/v1/aptly/fs/debian/work/pool
+# /nfs/v1/aptly/fs/debian/work/dbs/bullseye
+# /nfs/v1/aptly/publish/debian/dists/bullseye
+# /nfs/v1/aptly/publish/debian/pool
+# /nfs/v1/aptly/release
+
+# Dynamic disk:
+# /mirrors/v1/aptly/fs/debian/work
+# /mirrors/v1/aptly/fs/debian/work/pool -> /nfs/v1/aptly/fs/debian/work/pool
+# /mirrors/v1/aptly/fs/debian/work/publish -> /nfs/v1/aptly/publish
+
 [ -z "$NFS_ROOT" ] && NFS_ROOT=/nfs
 [ -z "$MIRROR_ROOT" ] && MIRROR_ROOT=/mirrors
 MIRROR_REL_DIR=v1/aptly
-MIRROR_NFS_DIR=$NFS_ROOT/$MIRROR_REL_DIR
-NFS_WORK_DIR=$NFS_ROOT/$MIRROR_REL_DIR/work/$MIRROR_NAME
-WORK_DIR=$MIRROR_ROOT/$MIRROR_REL_DIR/work
-PUBLISH_DIR=$MIRROR_NFS_DIR/publish
+NFS_REL_DIR=$NFS_ROOT/$MIRROR_REL_DIR
+NFS_PUBLISH_DIR=$NFS_REL_DIR/publish
+NFS_WORK_DIR=$NFS_REL_DIR/fs/$MIRROR_FILESYSTEM/work
+NFS_DBS_DIR=$NFS_WORK_DIR/dbs/$MIRROR_NAME
+
+WORK_DIR=$MIRROR_ROOT/$MIRROR_REL_DIR/fs/$MIRROR_FILESYSTEM/work
+
 SOURCE_DIR=$(pwd)
 SAVE_WORKSPACE=n
 APTLY_CONFIG=aptly-debian.conf
@@ -85,7 +106,7 @@ export GNUPGHOME=gnupg
 GPG_FILE=$GNUPGHOME/mykey.gpg
 
 BACKUP_STORAGE_URL="https://$BACKUP_STORAGE.blob.$STORAGE_SUFFIX"
-STORAGE_MIRROR_URL="$BACKUP_STORAGE_URL$MIRROR_ROOT/$MIRROR_REL_DIR"
+STORAGE_MIRROR_URL="$BACKUP_STORAGE_URL$MIRROR_ROOT/$MIRROR_REL_DIR/$MIRROR_FILESYSTEM"
 HAS_PUBLISH_UPDATE=n
 
 
@@ -112,10 +133,10 @@ validate_input_variables()
 prepare_workspace()
 {
     echo "pwd=$(pwd)"
-    mkdir -p $MIRROR_NFS_DIR/pool
-    mkdir -p $PUBLISH_DIR
-    ln -nsf $MIRROR_NFS_DIR/pool $WORK_DIR/pool
-    ln -nsf $PUBLISH_DIR $WORK_DIR/publish
+    mkdir -p $NFS_WORK_DIR/pool
+    mkdir -p $NFS_PUBLISH_DIR
+    ln -nsf $NFS_WORK_DIR/pool $WORK_DIR/pool
+    ln -nsf $NFS_PUBLISH_DIR $WORK_DIR/publish
     cp $SOURCE_DIR/azure-pipelines/config/aptly-debian.conf $APTLY_CONFIG
     cp $SOURCE_DIR/azure-pipelines/config/debian-packages-denylist.conf $PACKAGES_DENY_LIST
 
@@ -135,7 +156,7 @@ prepare_workspace()
     if [ "$CREATE_DB" == "y" ]; then
         return
     fi
-    local latest_db=$NFS_WORK_DIR/latest.tar.gz
+    local latest_db=$NFS_DBS_DIR/latest.tar.gz
     if [ ! -f "$latest_db" ]; then
         echo "The databse backup file $latest_db does not exist, please restore the file, add CREATE_DB=y option or recreat it." 1>&2
         exit 1
@@ -172,10 +193,29 @@ save_workspace()
     echo $package > latest
     azcopy cp ./$package "$STORAGE_MIRROR_URL/work/$MIRROR_NAME/dbs/"
     azcopy cp ./latest "$STORAGE_MIRROR_URL/work/$MIRROR_NAME/dbs/"
-    rm -f $NFS_WORK_DIR/prev.tar.gz
-    mv -f $NFS_WORK_DIR/latest.tar.gz $NFS_WORK_DIR/prev.tar.gz 2>/dev/null || true
-    mkdir $NFS_WORK_DIR/
-    cp ./$package "$NFS_WORK_DIR/latest.tar.gz"
+    rm -f $NFS_DBS_DIR/prev.tar.gz
+    mv -f $NFS_DBS_DIR/latest.tar.gz $NFS_DBS_DIR/prev.tar.gz 2>/dev/null || true
+    mkdir -p $NFS_DBS_DIR/
+    cp ./$package "$NFS_DBS_DIR/latest.tar.gz"
+
+    echo "Release the mirror"
+    local release_dir=$NFS_REL_DIR/release
+    local tmp_dir=$NFS_WORK_DIR/tmp/$MIRROR_NAME
+    mkdir -p $release_dir/$MIRROR_NAME/dists
+    ln -nfs ../publish/$MIRROR_NAME/pool $release_dir/$MIRROR_NAME/pool
+    mkdir -p $tmp_dir
+    for dist in $(echo $MIRROR_DISTRIBUTIONS | tr ',' ' '); do
+      echo "Publishing $MIRROR_NAME/$dist..."
+      sudo rm -rf $tmp_dir/$dist
+      cp -a $NFS_PUBLISH_DIR/$MIRROR_FILESYSTEM/dists/$dist $tmp_dir/$dist
+
+      # Swap the distribution, make sure the release folder very short down time
+      sudo rm -rf $tmp_dir/last-$dist
+      local releas_dist=$release_dir/$MIRROR_NAME/dists/$dist
+      [ -d $releas_dist ] && mv -f $releas_dist $tmp_dir/last-$dist
+      mv -f $tmp_dir/$dist $releas_dist
+      rm -f $tmp_dir/last-$dist
+    done
  
     echo "Saving workspace to $package is complete"
 }
