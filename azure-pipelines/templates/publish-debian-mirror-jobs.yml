@@ -95,7 +95,7 @@ jobs:
           - name: ${{ mirror.name }}
             variables:
               MIRROR_NAME: ${{ mirror.name }}
-              MIRROR_FILESYSTEM: ${{ fileSystem.name }}-v2
+              MIRROR_FILESYSTEM: ${{ fileSystem.name }}
               MIRROR_URL: ${{ fileSystem.url }}
               MIRROR_DISTRIBUTIONS: ${{ mirror.distributions }}
               ${{ if ne(mirror.architectures, '') }}:

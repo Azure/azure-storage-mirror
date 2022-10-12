@@ -77,6 +77,7 @@ fi
 
 # Persisted NFS:
 # /nfs/v1/aptly/fs/debian/work/pool
+# /nfs/v1/aptly/fs/debian/work/db -> /mirrors/v1/aptly/fs/debian/work/db
 # /nfs/v1/aptly/fs/debian/work/dbs/bullseye
 # /nfs/v1/aptly/publish/debian/dists/bullseye
 # /nfs/v1/aptly/publish/debian/pool
@@ -84,8 +85,6 @@ fi
 
 # Dynamic disk:
 # /mirrors/v1/aptly/fs/debian/work
-# /mirrors/v1/aptly/fs/debian/work/pool -> /nfs/v1/aptly/fs/debian/work/pool
-# /mirrors/v1/aptly/fs/debian/work/publish -> /nfs/v1/aptly/publish
 
 [ -z "$NFS_ROOT" ] && NFS_ROOT=/nfs
 [ -z "$MIRROR_ROOT" ] && MIRROR_ROOT=/mirrors
@@ -110,7 +109,7 @@ STORAGE_MIRROR_URL="$BACKUP_STORAGE_URL$MIRROR_ROOT/$MIRROR_REL_DIR/$MIRROR_FILE
 HAS_PUBLISH_UPDATE=n
 
 
-FILESYSTEM="filesystem:$MIRROR_FILESYSTEM:"
+FILESYSTEM="filesystem:common:"
 
 
 sudo rm -rf $WORK_DIR
@@ -135,9 +134,10 @@ prepare_workspace()
     echo "pwd=$(pwd)"
     mkdir -p $NFS_WORK_DIR/pool
     mkdir -p $NFS_PUBLISH_DIR
-    ln -nsf $NFS_WORK_DIR/pool $WORK_DIR/pool
-    ln -nsf $NFS_PUBLISH_DIR $WORK_DIR/publish
-    cp $SOURCE_DIR/azure-pipelines/config/aptly-debian.conf $APTLY_CONFIG
+    ln -nsf $WORK_DIR/db $NFS_WORK_DIR/db
+    sed -e "s#PUBLISHDIR_PLACEHOLDER#$NFS_PUBLISH_DIR/$MIRROR_FILESYSTEM#" \
+        -e "s#ROOTDIR_PLACEHOLDER#$NFS_WORK_DIR#" \
+       $SOURCE_DIR/azure-pipelines/config/aptly-debian-v2.conf > $APTLY_CONFIG
     cp $SOURCE_DIR/azure-pipelines/config/debian-packages-denylist.conf $PACKAGES_DENY_LIST
 
     # Import gpg key
@@ -149,13 +149,13 @@ prepare_workspace()
     chmod 700 $GNUPGHOME
     gpg --no-default-keyring --passphrase="$PASSPHRASE" --keyring=$GPG_FILE --import "$ENCRIPTED_KEY_GPG"
 
-    if [ -e db ]; then
-        rm -rf db
-    fi
+    sudo rm -rf db
+    mkdir -p db
 
-    if [ "$CREATE_DB" == "y" ]; then
+    if [ "$CREATE_DB"  == y ]; then
         return
     fi
+
     local latest_db=$NFS_DBS_DIR/latest.tar.gz
     if [ ! -f "$latest_db" ]; then
         echo "The databse backup file $latest_db does not exist, please restore the file, add CREATE_DB=y option or recreat it." 1>&2
@@ -167,9 +167,11 @@ prepare_workspace()
 
 save_workspace()
 {
+    set -x
+    local release_dir=$NFS_REL_DIR/release
     local package="db-$(date +%Y%m%d%H%M%S).tar.gz"
-    local public_key_file_asc=publish/public_key.asc
-    local public_key_file_gpg=publish/public_key.gpg
+    local public_key_file_asc=$NFS_PUBLISH_DIR/public_key.asc
+    local public_key_file_gpg=$NFS_PUBLISH_DIR/public_key.gpg
 
     if [ "$SAVE_WORKSPACE" == "n" ]; then
         return
@@ -177,6 +179,8 @@ save_workspace()
 
     gpg --no-default-keyring --keyring=$GPG_FILE --export -a > "$public_key_file_asc"
     gpg --no-default-keyring --keyring=$GPG_FILE --export > "$public_key_file_gpg"
+    mkdir -p $release_dir
+    cp "$public_key_file_asc" "$public_key_file_gpg" $release_dir/
 
     if [ -z "$BACKUP_STORAGE" ]; then
         echo "The back storage not set"
@@ -186,7 +190,7 @@ save_workspace()
     echo "Backup the aptly pool"
     exclude_pattern=$(sed '/^[[:space:]]*$/d' $PACKAGES_DENY_LIST | sed 's/$/*/' | paste -sd ";" -)
     echo "exclude_pattern=$exclude_pattern"
-    azcopy sync "$(realpath pool)/" "$STORAGE_MIRROR_URL/pool/" --exclude-pattern="$exclude_pattern" --recursive=true
+    azcopy sync "$NFS_WORK_DIR/pool/" "$STORAGE_MIRROR_URL/pool/" --exclude-pattern="$exclude_pattern" --recursive=true
 
     echo "Backup the aptly database"
     tar -czvf "$package" db
@@ -199,22 +203,21 @@ save_workspace()
     cp ./$package "$NFS_DBS_DIR/latest.tar.gz"
 
     echo "Release the mirror"
-    local release_dir=$NFS_REL_DIR/release
     local tmp_dir=$NFS_WORK_DIR/tmp/$MIRROR_NAME
-    mkdir -p $release_dir/$MIRROR_NAME/dists
-    ln -nfs ../publish/$MIRROR_NAME/pool $release_dir/$MIRROR_NAME/pool
+    mkdir -p $release_dir/$MIRROR_FILESYSTEM/dists
+    ln -nfs ../../publish/$MIRROR_FILESYSTEM/pool $release_dir/$MIRROR_FILESYSTEM/pool
     mkdir -p $tmp_dir
     for dist in $(echo $MIRROR_DISTRIBUTIONS | tr ',' ' '); do
-      echo "Publishing $MIRROR_NAME/$dist..."
+      echo "Publishing i$MIRROR_FILESYSTEM/$MIRROR_NAME/$dist..."
       sudo rm -rf $tmp_dir/$dist
       cp -a $NFS_PUBLISH_DIR/$MIRROR_FILESYSTEM/dists/$dist $tmp_dir/$dist
 
       # Swap the distribution, make sure the release folder very short down time
       sudo rm -rf $tmp_dir/last-$dist
-      local releas_dist=$release_dir/$MIRROR_NAME/dists/$dist
+      local releas_dist=$release_dir/$MIRROR_FILESYSTEM/dists/$dist
       [ -d $releas_dist ] && mv -f $releas_dist $tmp_dir/last-$dist
       mv -f $tmp_dir/$dist $releas_dist
-      rm -f $tmp_dir/last-$dist
+      rm -rf $tmp_dir/last-$dist
     done
  
     echo "Saving workspace to $package is complete"
