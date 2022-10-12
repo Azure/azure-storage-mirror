@@ -157,7 +157,15 @@ prepare_workspace()
     fi
 
     local latest_db=$NFS_DBS_DIR/latest.tar.gz
+    if [ "$CREATE_DB_GRACE" == y ] && [ ! -f "$latest_db" ]; then
+        return
+    fi
+
     if [ ! -f "$latest_db" ]; then
+        if [ "$CREATE_DB_GRACE" == y ]; then
+            echo "$latest_db does not exist, will create the new DB in $NFS_DBS_DIR"
+            return
+        fi
         echo "The databse backup file $latest_db does not exist, please restore the file, add CREATE_DB=y option or recreat it." 1>&2
         exit 1
     fi
