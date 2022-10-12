@@ -173,7 +173,7 @@ save_workspace()
     local public_key_file_asc=$NFS_PUBLISH_DIR/public_key.asc
     local public_key_file_gpg=$NFS_PUBLISH_DIR/public_key.gpg
 
-    if [ "$SAVE_WORKSPACE" == "n" ]; then
+    if [ "$FORCE_BACKUP" != "y" ] && [ "$SAVE_WORKSPACE" == "n" ]; then
         return
     fi
 
@@ -204,20 +204,29 @@ save_workspace()
 
     echo "Release the mirror"
     local tmp_dir=$NFS_WORK_DIR/tmp/$MIRROR_NAME
+    local release_dists_dir=$release_dir/$MIRROR_FILESYSTEM/dists
     mkdir -p $release_dir/$MIRROR_FILESYSTEM/dists
     ln -nfs ../../publish/$MIRROR_FILESYSTEM/pool $release_dir/$MIRROR_FILESYSTEM/pool
     mkdir -p $tmp_dir
     for dist in $(echo $MIRROR_DISTRIBUTIONS | tr ',' ' '); do
-      echo "Publishing i$MIRROR_FILESYSTEM/$MIRROR_NAME/$dist..."
-      sudo rm -rf $tmp_dir/$dist
-      cp -a $NFS_PUBLISH_DIR/$MIRROR_FILESYSTEM/dists/$dist $tmp_dir/$dist
+      local distname=$(echo $dist | tr '/' '_')
+      echo "Publishing $MIRROR_FILESYSTEM/$MIRROR_NAME/$distname..."
+      sudo rm -rf $tmp_dir/$distname
+      cp -a $NFS_PUBLISH_DIR/$MIRROR_FILESYSTEM/dists/$distname $tmp_dir/$distname
 
       # Swap the distribution, make sure the release folder very short down time
-      sudo rm -rf $tmp_dir/last-$dist
-      local releas_dist=$release_dir/$MIRROR_FILESYSTEM/dists/$dist
-      [ -d $releas_dist ] && mv -f $releas_dist $tmp_dir/last-$dist
-      mv -f $tmp_dir/$dist $releas_dist
-      rm -rf $tmp_dir/last-$dist
+      sudo rm -rf $tmp_dir/last-$distname
+      local release_dist=$release_dists_dir/$distname
+      [ -d $release_dist ] && mv -f $release_dist $tmp_dir/last-$distname
+      mv -f $tmp_dir/$distname $release_dist
+      rm -rf $tmp_dir/last-$distname
+
+      if [ "$dist" != "$distname" ] && [ "$MIRROR_FILESYSTEM" == "debian-security" ]; then
+        local distpath=$(dirname $release_dists_dir/$dist)
+        mkdir -p $distpath
+        ln -nsf  ../$distname $release_dists_dir/$dist || true
+        ln -nsf $distname $release_dists_dir/$(echo $dist | tr '/' '-')
+      fi
     done
  
     echo "Saving workspace to $package is complete"
@@ -243,7 +252,7 @@ update_repos()
 
     # Create the aptly mirrors if it does not exist
     local repos=
-    local need_to_publish=n
+    need_to_publish=n
     [ "$CREATE_DB" == "y" ] && need_to_publish=y
     for component in $(echo $components | tr ',' ' '); do
         local mirror="mirror-${name}-${distname}-${component}"
@@ -416,8 +425,9 @@ main()
     prepare_workspace
     for distribution in $(echo $MIRROR_DISTRIBUTIONS | tr ',' ' '); do
         echo "update repos for url=$MIRROR_URL name=$MIRROR_NAME distribution=$distribution architectures=$MIRROR_ARICHTECTURES components=$MIRROR_COMPONENTS"
+        need_to_publish=n
         update_repos $MIRROR_NAME "$MIRROR_URL" $distribution "$MIRROR_ARICHTECTURES" "$MIRROR_COMPONENTS"
-        publish_repos $MIRROR_NAME $distribution "$MIRROR_ARICHTECTURES" "$MIRROR_COMPONENTS"
+        [ "$need_to_publish" == "y" ] &&  publish_repos $MIRROR_NAME $distribution "$MIRROR_ARICHTECTURES" "$MIRROR_COMPONENTS"
     done
 
     save_workspace
