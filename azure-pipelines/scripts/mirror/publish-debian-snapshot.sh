@@ -167,10 +167,10 @@ update_mirrors()
       else
         sudo cp -r $DISTS/$dist $SNAPSHOT_TMP/dists/
         if [ "$FILESYSTEM_NAME" == "debian-security" ]; then
-          [ -e $SNAPSHOT_TMP/dists/$dist/updates ] || sudo ln -s . $SNAPSHOT_TMP/dists/$dist/updates
+          [ ! -d $SNAPSHOT_TMP/dists/$dist/updates ] && sudo ln -s . $SNAPSHOT_TMP/dists/$dist/updates
           if [ "$dist" == "jessie" ] || [ "$dist" == "stretch" ] || [ "$dist" == "buster" ]; then
-            sudo ln -sf $dist/updates ${dist}_updates
-            sudo ln -sf $dist/updates ${dist}-security
+            sudo ln -nsf $dist/updates $SNAPSHOT_TMP/dists/${dist}_updates
+            sudo ln -nsf $dist/updates $SNAPSHOT_TMP/dists/${dist}-security
           fi
         fi
       fi
