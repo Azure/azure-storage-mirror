@@ -18,7 +18,7 @@ usage()
     exit 1
 }
 
-MIRROR_NAME=
+FILESYSTEM_NAME=
 PUBLISH_ROOT=
 DISTRIBUTIONS=
 MIRROR_URL=
@@ -31,7 +31,7 @@ STORAGE_SUFFIX="core.windows.net"
 while getopts "n:u:d:a:c:b:i:j:f" opt; do
     case $opt in
         n)
-            MIRROR_NAME=$OPTARG
+            FILESYSTEM_NAME=$OPTARG
             ;;
         u)
             MIRROR_URL=$OPTARG
@@ -60,7 +60,7 @@ while getopts "n:u:d:a:c:b:i:j:f" opt; do
     esac
 done
 
-if [ -z "$MIRROR_NAME" ] || [ -z "$MIRROR_URL" ]; then
+if [ -z "$FILESYSTEM_NAME" ] || [ -z "$MIRROR_URL" ]; then
     echo "Some required options: name, url, not set:" 1>&2
     usage
 fi
@@ -83,10 +83,10 @@ PACKAGES_DENY_LIST=debian-packages-denylist.conf
 SOURCE_DIR=$(pwd)
 WORK_DIR=$SOURCE_DIR/work
 NFS_DIR=$NFS_ROOT/$MIRROR_REL_DIR
-APT_MIRROR_DIR=$NFS_DIR/work/$MIRROR_NAME
-PUBLISH_DIR=$NFS_DIR/publish/$MIRROR_NAME
+APT_MIRROR_DIR=$NFS_DIR/work/$FILESYSTEM_NAME
+PUBLISH_DIR=$NFS_DIR/publish/$FILESYSTEM_NAME
 BACKUP_STORAGE_URL="https://$BACKUP_STORAGE.blob.$STORAGE_SUFFIX"
-STORAGE_MIRROR_URL="$BACKUP_STORAGE_URL$MIRROR_ROOT/$MIRROR_REL_DIR/$MIRROR_NAME"
+STORAGE_MIRROR_URL="$BACKUP_STORAGE_URL$MIRROR_ROOT/$MIRROR_REL_DIR/$FILESYSTEM_NAME"
 
 mkdir -p $WORK_DIR
 mkdir -p $APT_MIRROR_DIR
@@ -134,11 +134,12 @@ prepare_workspace()
 
 update_mirrors()
 {
+    set -x
     SNAPSHOT_TIME=$(date +%Y%m%dT%H%M%SZ)
     ENDPOINT=$(echo $MIRROR_URL | awk -F'://' '{print $2}')
     SNAPSHOT_TMP=$PUBLISH_DIR/tmp
     SNAPSHOT_POINT=$PUBLISH_DIR/$SNAPSHOT_TIME
-    SNAPSHOT_LATEST=$SNAPSHOT_MIRROR/latest
+    SNAPSHOT_LATEST=$PUBLISH_DIR/latest
     DISTS=$APT_MIRROR_DIR/mirror/$ENDPOINT/dists
 
     # Update the mirrors
@@ -147,7 +148,7 @@ update_mirrors()
     # Create snapshot and links
     sudo rm -rf $SNAPSHOT_TMP
     sudo mkdir -p $SNAPSHOT_TMP/dists
-    sudo ln -sf "../../../work/$MIRROR_NAME/mirror/$ENDPOINT/$MIRROR/pool" $SNAPSHOT_TMP/pool
+    sudo ln -sf "../../../work/$FILESYSTEM_NAME/mirror/$ENDPOINT/pool" $SNAPSHOT_TMP/pool
 
     for dist in `ls $DISTS`
     do
@@ -165,7 +166,7 @@ update_mirrors()
         sudo ln -s ../../$dist_snapshot/dists/$dist $SNAPSHOT_TMP/dists/$dist
       else
         sudo cp -r $DISTS/$dist $SNAPSHOT_TMP/dists/
-        if [ "$MIRROR_NAME" == "debian-security" ]; then
+        if [ "$FILESYSTEM_NAME" == "debian-security" ]; then
           [ -e $SNAPSHOT_TMP/dists/$dist/updates ] || sudo ln -s . $SNAPSHOT_TMP/dists/$dist/updates
           if [ "$dist" == "jessie" ] || [ "$dist" == "stretch" ] || [ "$dist" == "buster" ]; then
             sudo ln -sf $dist/updates ${dist}_updates
@@ -176,12 +177,12 @@ update_mirrors()
     done
 
     sudo mv $SNAPSHOT_TMP $SNAPSHOT_POINT
-    sudo ln -nsf $SNAPSHOT_TIME $SNAPSHOT_MIRROR/latest
+    sudo ln -nsf $SNAPSHOT_TIME $SNAPSHOT_LATEST
     
     # Save pool and mirror indexes
     # Not necessary to save the workspace, the apt-mirror workspace only to accelerate the download speed
     package="sn-$SNAPSHOT_TIME.tar.gz"
-    tar -czvf "$package" -C $PUBLISH_DIR $SNAPSHOT_TIME
+    tar -czf "$package" -C $PUBLISH_DIR $SNAPSHOT_TIME
     echo $SNAPSHOT_TIME > latest
     exclude_pattern=$(sed '/^[[:space:]]*$/d' $PACKAGES_DENY_LIST | sed 's/$/*/' | paste -sd ";" -)
     echo "exclude_pattern=$exclude_pattern"
