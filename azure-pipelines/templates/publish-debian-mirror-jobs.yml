@@ -119,5 +119,8 @@ jobs:
             MIRRORS: '${{ convertToJson(fileSystem.mirrors) }}'
           steps:
           - script: |
+              sudo apt-get install -y apt-mirror
+            displayName: 'Init for apt mirror'
+          - script: |
                azure-pipelines/scripts/mirror/publish-debian-snapshot.sh  -n "$MIRROR_FILESYSTEM" -u "$MIRROR_URL" -j "$MIRRORS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS" -b "$STORAGE_ACCOUNT"
             displayName: 'Publish Apt Mirror'
