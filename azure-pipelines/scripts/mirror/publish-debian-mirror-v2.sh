@@ -232,8 +232,9 @@ save_workspace()
       if [ "$dist" != "$distname" ] && [ "$MIRROR_FILESYSTEM" == "debian-security" ]; then
         local distpath=$(dirname $release_dists_dir/$dist)
         mkdir -p $distpath
+        
         ln -nsf  ../$distname $release_dists_dir/$dist || true
-        ln -nsf $distname $release_dists_dir/$(echo $dist | tr '/' '-')
+        ln -nsf $distname $release_dists_dir/$(echo $dist | cut -d/ -f1)-security
       fi
     done
  
