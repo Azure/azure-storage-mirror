@@ -38,7 +38,10 @@ jobs:
   parameters:
     jobVariables:
       MIRROR_COMPONENTS: 'contrib,non-free,main'
-      MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
+      ${{ if eq(parameters.mirrorType, 'apt-mirror') }}:
+        MIRROR_ARICHTECTURES: 'all,amd64,armhf,arm64'
+      ${{ else }}:
+        MIRROR_ARICHTECTURES: 'amd64,armhf,arm64'
       NFS_MOUNT_POINT: /nfs
       MIRROR_ROOT: /mirrors
     preSteps:
