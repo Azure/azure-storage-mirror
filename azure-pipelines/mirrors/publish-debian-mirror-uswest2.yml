@@ -15,7 +15,7 @@ schedules:
     - main
   always: true
 
-pool: sonic-mirror-westus2-2
+pool: sonic-mgmt-westus2
 variables:
 - group: SONiC-Azure-Key-Vault
 - group: Debian-Mirror-Common
