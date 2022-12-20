@@ -179,7 +179,7 @@ update_mirrors()
 
     sudo mv $SNAPSHOT_TMP $SNAPSHOT_POINT
     sudo ln -nsf $SNAPSHOT_TIME $SNAPSHOT_LATEST
-    echo $SNAPSHOT_TIME | sudo tee -a timestamps
+    echo $SNAPSHOT_TIME | sudo tee -a $PUBLISH_DIR/timestamps
     
     # Save pool and mirror indexes
     # Not necessary to save the workspace, the apt-mirror workspace only to accelerate the download speed
