@@ -148,6 +148,7 @@ update_mirrors()
     # Create snapshot and links
     sudo rm -rf $SNAPSHOT_TMP
     sudo mkdir -p $SNAPSHOT_TMP/dists
+    echo $SNAPSHOT_TIME | sudo tee $SNAPSHOT_TMP/timestamp
     sudo ln -sf "../../../work/$FILESYSTEM_NAME/mirror/$ENDPOINT/pool" $SNAPSHOT_TMP/pool
 
     for dist in `ls $DISTS`
@@ -178,6 +179,7 @@ update_mirrors()
 
     sudo mv $SNAPSHOT_TMP $SNAPSHOT_POINT
     sudo ln -nsf $SNAPSHOT_TIME $SNAPSHOT_LATEST
+    echo $SNAPSHOT_TIME | sudo tee -a timestamps
     
     # Save pool and mirror indexes
     # Not necessary to save the workspace, the apt-mirror workspace only to accelerate the download speed
