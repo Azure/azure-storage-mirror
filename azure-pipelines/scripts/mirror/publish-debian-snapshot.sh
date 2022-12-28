@@ -161,14 +161,15 @@ update_mirrors()
       cursha256=$(sha256sum $DISTS/$dist_updates/Release  | cut -d " " -f1)
       snsha256=
       elapsedseconds=0
+      dist_snapshot=
       if [ -e $SNAPSHOT_LATEST/dists/$dist_updates/Release ]; then
         snsha256=$(sha256sum $SNAPSHOT_LATEST/dists/$dist_updates/Release | cut -d " " -f1)
-        timestamp=$(date --date="$(grep Date: $SNAPSHOT_LATEST/dists/$dist_updates/Release | grep Date | cut -d: -f2-)" +%s)
+        dist_snapshot=$(realpath $SNAPSHOT_LATEST/dists/$dist |  awk -F'/' '{print  $(NF-2)}')
+        timestamp=$(date --date="$(echo $dist_snapshot | cut -dT -f1)" +%s)
         elapsedseconds=$(($NOW_IN_SECONDS - $timestamp))
       fi
       # Refresh the index if more than 30 days (2592000 seconds), make sure the old indexes can be removed safely
       if [ "$cursha256" == "$snsha256" ] && [ "$elapsedseconds" -lt 2592000 ]; then
-        dist_snapshot=$(realpath $SNAPSHOT_LATEST/dists/$dist |  awk -F'/' '{print  $(NF-2)}')
         sudo ln -s ../../$dist_snapshot/dists/$dist $SNAPSHOT_TMP/dists/$dist
       else
         sudo cp -r $DISTS/$dist $SNAPSHOT_TMP/dists/
