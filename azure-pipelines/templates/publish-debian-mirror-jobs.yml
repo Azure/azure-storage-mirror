@@ -107,6 +107,10 @@ jobs:
                 MIRROR_COMPONENTS: ${{ mirror.components }}
             steps:
             - script: |
+                if [[ "$MIRROR_NAME" == jessie* ]]; then
+                  echo "Skipped to update mirror $MIRROR_NAME, $MIRROR_URL"
+                  exit 0
+                fi
                 azure-pipelines/scripts/mirror/publish-debian-mirror-v2.sh -n "$MIRROR_NAME" -u "$MIRROR_URL" -d "$MIRROR_DISTRIBUTIONS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS" -b "$STORAGE_ACCOUNT"
               env:
                 PASSPHRASE: $(sonic-gpg-passphrase)
