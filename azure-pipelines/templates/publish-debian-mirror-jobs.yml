@@ -11,6 +11,8 @@ parameters:
   - name: 'debian'
     url: 'http://deb.debian.org/debian'
     mirrors:
+    - name: bookworm
+      distributions: 'bookworm,bookworm-updates,bookworm-backports'
     - name: bullseye
       distributions: 'bullseye,bullseye-updates,bullseye-backports'
     - name: buster
@@ -23,6 +25,8 @@ parameters:
   - name: 'debian-security'
     url: 'http://security.debian.org/debian-security'
     mirrors:
+    - name: 'bookworm-security'
+      distributions: 'bullseye-security'
     - name: 'bullseye-security'
       distributions: 'bullseye-security'
     - name: 'buster-security'
