@@ -130,6 +130,8 @@ prepare_workspace()
     else
         append_mirrors mirror.list "$MIRROR_URL" "$DISTRIBUTIONS" "$ARCHITECTURES" "$COMPONENTS"
     fi
+    echo "The mirror.list:"
+    cat mirror.list
 }
 
 update_mirrors()
