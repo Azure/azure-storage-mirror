@@ -13,6 +13,7 @@ parameters:
     mirrors:
     - name: bookworm
       distributions: 'bookworm,bookworm-updates,bookworm-backports'
+      components: 'contrib,non-free,main,non-free-firmware'
     - name: bullseye
       distributions: 'bullseye,bullseye-updates,bullseye-backports'
     - name: buster
@@ -27,6 +28,7 @@ parameters:
     mirrors:
     - name: 'bookworm-security'
       distributions: 'bookworm-security'
+      components: 'contrib,non-free,main,non-free-firmware'
     - name: 'bullseye-security'
       distributions: 'bullseye-security'
     - name: 'buster-security'
