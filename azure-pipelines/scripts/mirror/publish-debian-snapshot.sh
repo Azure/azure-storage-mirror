@@ -133,6 +133,8 @@ update_mirrors()
     DISTS=$APT_MIRROR_DIR/mirror/$ENDPOINT/dists
 
     # Update the mirrors
+    sudo patch /usr/bin/apt-mirror < $SOURCE_DIR/azure-pipelines/config/apt-mirror.patch
+    echo "patch applied to /usr/bin/apt-mirror"
     sudo apt-mirror mirror.list
     
     # Create snapshot and links
