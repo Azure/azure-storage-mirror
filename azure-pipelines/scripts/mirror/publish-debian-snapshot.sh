@@ -124,7 +124,7 @@ prepare_workspace()
 
 update_mirrors()
 {
-    set -x
+    set -ex
     SNAPSHOT_TIME=$(date +%Y%m%dT%H%M%SZ)
     ENDPOINT=$(echo $MIRROR_URL | awk -F'://' '{print $2}')
     SNAPSHOT_TMP=$PUBLISH_DIR/tmp
@@ -132,9 +132,11 @@ update_mirrors()
     SNAPSHOT_LATEST=$PUBLISH_DIR/latest
     DISTS=$APT_MIRROR_DIR/mirror/$ENDPOINT/dists
 
-    # Update the mirrors
-    sudo patch /usr/bin/apt-mirror < $SOURCE_DIR/azure-pipelines/config/apt-mirror.patch
+    # Patch apt-mirror
+    sudo patch /usr/bin/apt-mirror < $SOURCE_DIR/azure-pipelines/config/apt-mirror.patch || { echo "Failed to patch apt-mirror, exit"; exit 1; }
     echo "patch applied to /usr/bin/apt-mirror"
+
+    # Update the mirrors
     sudo apt-mirror mirror.list
     
     # Create snapshot and links
