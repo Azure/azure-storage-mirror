@@ -18,14 +18,7 @@ parameters:
       distributions: 'bookworm,bookworm-updates,bookworm-backports'
       components: 'contrib,non-free,main,non-free-firmware'
     - name: bullseye
-      distributions: 'bullseye,bullseye-updates,bullseye-backports'
-    - name: buster
-      distributions: 'buster,buster-updates,buster-backports'
-    - name: stretch
-      distributions: 'stretch,stretch-updates,stretch-backports'
-    - name: jessie
-      distributions: 'jessie,jessie-updates'
-      architectures: 'amd64,armhf'
+      distributions: 'bullseye,bullseye-updates'
   - name: 'debian-security'
     url: 'http://security.debian.org/debian-security'
     mirrors:
@@ -37,13 +30,6 @@ parameters:
       components: 'contrib,non-free,main,non-free-firmware'
     - name: 'bullseye-security'
       distributions: 'bullseye-security'
-    - name: 'buster-security'
-      distributions: 'buster/updates'
-    - name: 'stretch-security'
-      distributions: 'stretch/updates'
-    - name: 'jessie-security'
-      distributions: 'jessie/updates'
-      architectures: 'amd64,armhf'
 
 jobs:
 - template: jobs-template.yml
@@ -68,7 +54,7 @@ jobs:
         sudo mkdir -p $NFS_MOUNT_POINT $MIRROR_ROOT
         sudo chown $(id -un):$(id -gn) $MIRROR_ROOT
         sudo umount $NFS_MOUNT_POINT || true
-        sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
+        sudo mount -t nfs -o rw,hard,rsize=262144,wsize=262144,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
         sudo chmod 777 $NFS_MOUNT_POINT
         if ! mountpoint -q $NFS_MOUNT_POINT; then
           echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
