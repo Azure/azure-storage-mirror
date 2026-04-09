@@ -18,36 +18,11 @@ parameters:
       distributions: 'bookworm,bookworm-updates,bookworm-backports'
       components: 'contrib,non-free,main,non-free-firmware'
     - name: bullseye
-      distributions: 'bullseye,bullseye-updates,bullseye-backports'
-    - name: buster
-      distributions: 'buster,buster-updates,buster-backports'
-    - name: stretch
-      distributions: 'stretch,stretch-updates,stretch-backports'
-    - name: jessie
-      distributions: 'jessie,jessie-updates'
-      architectures: 'amd64,armhf'
-  - name: 'debian-security'
-    url: 'http://security.debian.org/debian-security'
-    mirrors:
-    - name: 'trixie-security'
-      distributions: 'trixie-security'
-      components: 'contrib,non-free,main,non-free-firmware'
-    - name: 'bookworm-security'
-      distributions: 'bookworm-security'
-      components: 'contrib,non-free,main,non-free-firmware'
-    - name: 'bullseye-security'
-      distributions: 'bullseye-security'
-    - name: 'buster-security'
-      distributions: 'buster/updates'
-    - name: 'stretch-security'
-      distributions: 'stretch/updates'
-    - name: 'jessie-security'
-      distributions: 'jessie/updates'
-      architectures: 'amd64,armhf'
-
+      distributions: 'bullseye,bullseye-updates'
 jobs:
 - template: jobs-template.yml
   parameters:
+    timeoutInMinutes: 1440
     jobVariables:
       MIRROR_COMPONENTS: 'contrib,non-free,main'
       ${{ if eq(parameters.mirrorType, 'apt-mirror') }}:
@@ -68,12 +43,18 @@ jobs:
         sudo mkdir -p $NFS_MOUNT_POINT $MIRROR_ROOT
         sudo chown $(id -un):$(id -gn) $MIRROR_ROOT
         sudo umount $NFS_MOUNT_POINT || true
-        sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
+        sudo mount -t nfs -o rw,hard,rsize=262144,wsize=262144,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
         sudo chmod 777 $NFS_MOUNT_POINT
         if ! mountpoint -q $NFS_MOUNT_POINT; then
           echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
           exit 1
         fi
+
+        mkdir -p $NFS_MOUNT_POINT/v1/sn/work
+        mkdir -p $NFS_MOUNT_POINT/v1/sn/publish
+
+        chmod 777 $NFS_MOUNT_POINT/v1/sn/work
+        chmod 777 $NFS_MOUNT_POINT/v1/sn/publish
 
         if [ -z "$(which azcopy)" ]; then
           wget -O- "https://aka.ms/downloadazcopy-v10-linux" | tar -zxf - --strip-components=1
@@ -81,6 +62,26 @@ jobs:
           azcopy --version
         fi
       displayName: 'Init agent'
+    - task: AzureCLI@2
+      displayName: 'Copy from Blob Storage to NFS'
+      inputs:
+        azureSubscription: 'debian-snapshot'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          set -ex
+          df -h
+          export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
+          # Sync pool directories from blob to NFS work area
+          azcopy sync "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/pool" \
+            /nfs/v1/sn/work/debian/mirror/deb.debian.org/debian/pool --recursive=true
+          azcopy sync "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/pool" \
+            /nfs/v1/sn/work/debian-security/mirror/security.debian.org/debian-security/pool --recursive=true
+          azcopy sync "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts" \
+            /nfs/v1/sn/publish/debian --recursive=true
+          azcopy sync "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/ts" \
+            /nfs/v1/sn/publish/debian-security --recursive=true
+          df -h
       retryCountOnTaskFailure: 5
     - script: |
         echo "STORAGE_ACCOUNT=$STORAGE_ACCOUNT"
@@ -94,6 +95,7 @@ jobs:
         echo "GROUP_NAMES=$GROUP_NAMES"
         echo "UpdateMirror=$(UpdateMirror)"
         echo "GROUP_NAMES=$GROUP_NAMES"
+        exit 1
       displayName: 'Print Parameters'
     stepGroups:
     - ${{ each fileSystem in parameters.fileSystems }}:
