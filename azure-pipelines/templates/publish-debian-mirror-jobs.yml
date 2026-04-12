@@ -147,7 +147,7 @@ jobs:
               inlineScript: |
                 set -ex
                 ip addr
-                sleep 3600
+                sleep 36000
                 exit 0
                 export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
                 #az storage blob delete-batch --auth-mode login --account-name sonicstoragepublic --source debian-snapshot --pattern "debian/ts/latest/*"
