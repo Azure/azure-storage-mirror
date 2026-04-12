@@ -6,9 +6,7 @@
 trigger: none
 pr: none
 
-pool: sonic-mgmt-westus2-1es
-variables:
-- group: vg-storage-westus2
+pool: sonicso1ES-amd64-a
 
 jobs:
 - template: ../templates/publish-debian-mirror-jobs.yml

@@ -146,6 +146,9 @@ jobs:
               scriptLocation: 'inlineScript'
               inlineScript: |
                 set -ex
+                ip addr
+                sleep 3600
+                exit 0
                 export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
                 #az storage blob delete-batch --auth-mode login --account-name sonicstoragepublic --source debian-snapshot --pattern "debian/ts/latest/*"
                 azcopy copy /nfs/v1/sn/publish/debian/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/latest" --follow-symlinks=true
