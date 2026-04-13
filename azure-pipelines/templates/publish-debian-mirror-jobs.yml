@@ -122,7 +122,7 @@ jobs:
                ls -al /nfs/v1/sn/work/debian/mirror/deb.debian.org/debian/pool /nfs/v1/sn/work/debian-security/mirror/security.debian.org/debian-security/pool
                ls -al /nfs/v1/sn/publish/debian/ /nfs/v1/sn/publish/debian-security/ 
                ls -al /nfs/v1/sn/work/debian/mirror/deb.debian.org/debian/ /nfs/v1/sn/work/debian-security/mirror/security.debian.org/debian-security/
-               #azure-pipelines/scripts/mirror/publish-debian-snapshot.sh  -n "$MIRROR_FILESYSTEM" -u "$MIRROR_URL" -j "$MIRRORS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS"
+               azure-pipelines/scripts/mirror/publish-debian-snapshot.sh  -n "$MIRROR_FILESYSTEM" -u "$MIRROR_URL" -j "$MIRRORS" -a "$MIRROR_ARICHTECTURES" -c "$MIRROR_COMPONENTS"
             displayName: 'Publish Apt Mirror'
           - task: AzureCLI@2
             displayName: Publish to Azure Storage by task
@@ -133,13 +133,13 @@ jobs:
               inlineScript: |
                 set -ex
                 export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
-                #az storage blob delete-batch --auth-mode login --account-name sonicstoragepublic --source debian-snapshot --pattern "debian/ts/latest/*"
-                #azcopy copy /nfs/v1/sn/publish/debian/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/latest" --follow-symlinks=true
-                #ts=$(cat /nfs/v1/sn/publish/debian/latest/timestamp)
-                #azcopy copy /nfs/v1/sn/publish/debian/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/$ts/" --recursive=true --follow-symlinks=true
-                #ts=$(cat /nfs/v1/sn/publish/debian-security/latest/timestamp)
-                #azcopy copy /nfs/v1/sn/publish/debian-security/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/latest" --follow-symlinks=true
-                #azcopy copy /nfs/v1/sn/publish/debian-security/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/ts/$ts/" --recursive=true --follow-symlinks=true
+                az storage blob delete-batch --auth-mode login --account-name sonicstoragepublic --source debian-snapshot --pattern "debian/ts/latest/*"
+                azcopy copy /nfs/v1/sn/publish/debian/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/latest" --follow-symlinks=true
+                ts=$(cat /nfs/v1/sn/publish/debian/latest/timestamp)
+                azcopy copy /nfs/v1/sn/publish/debian/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/$ts/" --recursive=true --follow-symlinks=true
+                ts=$(cat /nfs/v1/sn/publish/debian-security/latest/timestamp)
+                azcopy copy /nfs/v1/sn/publish/debian-security/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/latest" --follow-symlinks=true
+                azcopy copy /nfs/v1/sn/publish/debian-security/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/ts/$ts/" --recursive=true --follow-symlinks=true
                 #for dist in $(find /nfs/v1/sn/publish/debian/ /nfs/v1/sn/publish/debian-security/ -maxdepth 3 -name dists -type d); do
                   # dist= /nfs/v1/sn/publish/debian/20250902T172610Z/dists
                 #  ts=$(echo $dist | grep -Eo [0-9]{8}T[0-9]{6}Z)
