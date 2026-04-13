@@ -131,5 +131,5 @@ jobs:
                 set -ex
                 # azcopy sync /nfs/v1/sn/publish/debian/20221013T073449Z/dists/jessie/contrib/source/ "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/20221013T073449Z/dists/jessie/contrib/source"  --recursive=true --follow-symlinks=true
                 export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
-                azcopy sync /nfs/v1/sn/publish/debian/20221013T073449Z/dists/jessie/contrib/i18n "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/20221013T073449Z/dists/jessie/contrib/i18n"
+                azcopy sync /nfs/v1/sn/publish/debian/20221013T073449Z "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/20221013T073449Z"
 
