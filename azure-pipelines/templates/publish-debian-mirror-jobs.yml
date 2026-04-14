@@ -21,11 +21,6 @@ parameters:
       distributions: 'bullseye,bullseye-updates,bullseye-backports'
     - name: buster
       distributions: 'buster,buster-updates,buster-backports'
-    - name: stretch
-      distributions: 'stretch,stretch-updates,stretch-backports'
-    - name: jessie
-      distributions: 'jessie,jessie-updates'
-      architectures: 'amd64,armhf'
   - name: 'debian-security'
     url: 'http://security.debian.org/debian-security'
     mirrors:
@@ -39,11 +34,6 @@ parameters:
       distributions: 'bullseye-security'
     - name: 'buster-security'
       distributions: 'buster/updates'
-    - name: 'stretch-security'
-      distributions: 'stretch/updates'
-    - name: 'jessie-security'
-      distributions: 'jessie/updates'
-      architectures: 'amd64,armhf'
 
 jobs:
 - template: jobs-template.yml
@@ -68,7 +58,7 @@ jobs:
         sudo mkdir -p $NFS_MOUNT_POINT $MIRROR_ROOT
         sudo chown $(id -un):$(id -gn) $MIRROR_ROOT
         sudo umount $NFS_MOUNT_POINT || true
-        sudo mount -t nfs -o rw,hard,rsize=65536,wsize=65536,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
+        sudo mount -t nfs -o rw,hard,rsize=262144,wsize=262144,sec=sys,vers=4.1,tcp $(NFS_VOLUMN) $NFS_MOUNT_POINT
         sudo chmod 777 $NFS_MOUNT_POINT
         if ! mountpoint -q $NFS_MOUNT_POINT; then
           echo "Failed to mount $(NFS_VOLUMN) $NFS_MOUNT_POINT" 1>&2
@@ -148,20 +138,15 @@ jobs:
                 set -ex
                 export AZCOPY_AUTO_LOGIN_TYPE=AZCLI
                 #az storage blob delete-batch --auth-mode login --account-name sonicstoragepublic --source debian-snapshot --pattern "debian/ts/latest/*"
-                azcopy copy /nfs/v1/sn/publish/debian/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/latest" --follow-symlinks=true
-                ts=$(cat /nfs/v1/sn/publish/debian/latest/timestamp)
-                azcopy copy /nfs/v1/sn/publish/debian/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/ts/$ts/" --recursive=true --follow-symlinks=true
-                ts=$(cat /nfs/v1/sn/publish/debian-security/latest/timestamp)
-                azcopy copy /nfs/v1/sn/publish/debian-security/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/latest" --follow-symlinks=true
-                azcopy copy /nfs/v1/sn/publish/debian-security/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/ts/$ts/" --recursive=true --follow-symlinks=true
+                azcopy copy /nfs/v1/sn/publish/${{ fileSystem.name }}/latest/timestamp "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/${{ fileSystem.name }}/latest" --follow-symlinks=true
+                ts=$(cat /nfs/v1/sn/publish/${{ fileSystem.name }}/latest/timestamp)
+                azcopy copy /nfs/v1/sn/publish/${{ fileSystem.name }}/latest/dists "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/${{ fileSystem.name }}/ts/$ts/" --recursive=true --follow-symlinks=true
                 #for dist in $(find /nfs/v1/sn/publish/debian/ /nfs/v1/sn/publish/debian-security/ -maxdepth 3 -name dists -type d); do
                   # dist= /nfs/v1/sn/publish/debian/20250902T172610Z/dists
                 #  ts=$(echo $dist | grep -Eo [0-9]{8}T[0-9]{6}Z)
                 #  repo=$(echo $dist | grep -Eo debian[^/]*/[0-9]{8}T[0-9]{6}Z | grep -Eo debian[^/]*)
                 #  azcopy copy $dist "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/$repo/ts/$ts/" --recursive=true --follow-symlinks=true
                 #done
-                azcopy sync /nfs/v1/sn/work/debian-security/mirror/security.debian.org/debian-security/pool \
-                  "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian-security/pool"
-                azcopy sync /nfs/v1/sn/work/debian/mirror/deb.debian.org/debian/pool \
-                  "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/debian/pool"
+                azcopy sync /nfs/v1/sn/work/${{ fileSystem.name }}/mirror/$(echo $MIRROR_URL | awk -F/ '{print$3}')/${{ fileSystem.name }}/pool \
+                  "https://sonicstoragepublic.blob.core.windows.net/debian-snapshot/${{ fileSystem.name }}/pool"
 
