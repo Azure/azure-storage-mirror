@@ -18,7 +18,9 @@ parameters:
       distributions: 'bookworm,bookworm-updates,bookworm-backports'
       components: 'contrib,non-free,main,non-free-firmware'
     - name: bullseye
-      distributions: 'bullseye,bullseye-updates'
+      distributions: 'bullseye,bullseye-updates,bullseye-backports'
+    - name: buster
+      distributions: 'buster,buster-updates,buster-backports'
   - name: 'debian-security'
     url: 'http://security.debian.org/debian-security'
     mirrors:
@@ -30,6 +32,8 @@ parameters:
       components: 'contrib,non-free,main,non-free-firmware'
     - name: 'bullseye-security'
       distributions: 'bullseye-security'
+    - name: 'buster-security'
+      distributions: 'buster/updates'
 
 jobs:
 - template: jobs-template.yml
